@@ -1,0 +1,9 @@
+<?psa_init
+
+my $variable = "foo";
+
+?><?psa my $psa = shift;
+
+return $variable;
+
+?>

@@ -1,0 +1,9 @@
+[% DEFAULT title = "PSA"
+	stylesheet = "schema.css"
+%]
+<html>
+  <head>
+    <title>[% title %]</title>
+    <link rel="stylesheet" href="[% uri('flat', "css/$stylesheet" ) %]" />
+  </head>
+<body>

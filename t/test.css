@@ -1,0 +1,4 @@
+/* Magic file type detection doesn't work on certain types of files! */
+.foo {
+    font-family: kooky;
+}

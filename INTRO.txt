@@ -1,0 +1,114 @@
+
+This is the debian package for PSA.
+
+To get your PSA applications working, you'll need to tell your web
+server to execute it as a CGI, FastCGI or mod_perl program.  This can
+usually be done via rules (eg, setting all files ending in .cgi with
+the execute bit set to run as CGI), or by defining individual
+applications.
+
+A Lightning Intro to a PSA app
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The concept with PSA is a single entry point for dynamic requests from
+an individual application; therefore, the root of that application
+might look like this:
+
+     /.htaccess    - configures web server access
+
+     /psa.cgi      - the (custom) CGI/FastCGI/mod_perl wrapper
+     /etc/         - Application configuration, passwords, etc
+
+     /lib/         - any site-specific .pm files
+     /psa-bin/     - dynamic page logic
+
+     /templates/   - TT or similar templates
+
+     /js/          - eg. of `flat' content
+     /images/      - 
+     /css/         -  etc
+
+     /sbin/        - administrator scripts, including setup script
+     /t/           - (command line) application test suite
+
+     /var/         - symlinks(perhaps) to correct places to store:
+     /var/lib/session     - session information, 
+     /var/lock/           - session locks
+     /var/lib/js/         - cached dynamically generated JavaScript
+     /var/lib/perl/       - cached dynamically generated perl
+     /var/log/            - log files
+
+This is the psa root, all the pages can expect this to be the CWD.
+
+Different toolkits assume different things about URLs, the only thing
+that this one assumes is that the PSA root is the same as where
+requests go ( but that's only through the application ).
+
+ie, it is expected that either psa.cgi is located in the webroot, or
+it immediately uses "chdir()" to get there.  As such, the psa.cgi
+script is extremely simple.
+
+Installing a PSA app to a FastCGI web server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Dead simple!
+
+Add the application as an `external' FastCGI server.  Currently I
+haven't added support for listening for inbound connections on an IP
+socket, as I haven't needed it yet.  It will be in an upcoming
+release.
+
+Set the external FastCGI socket path to somewhere readable to the web
+server, preferably outside the webroot.
+
+Then, specify the path to the socket when you start your web
+application;
+
+  export FCGI_SOCKET=/var/tmp/myApp
+  export FCGI_NPROC=5
+  ./handler.pl
+
+Installing a PSA app to an Apache Server
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you're using FastCGI, then first add a user & group to the system
+for the application.  Apache/mod_perl seemed to forget at some point
+that it's good to have different applications run as different UNIX
+users, so mod_perl is incompatible with the User/Group options.
+
+LoadModule fastcgi_module /usr/lib/apache/1.3/mod_fastcgi.so
+LoadModule rewrite_module /usr/lib/apache/1.3/mod_rewrite.so
+
+RewriteLock "/var/run/rewrite.LCK"
+
+<VirtualHost your_ip>
+    DocumentRoot /home/user/application
+
+    User user
+    Group group
+
+    ServerName www.your_dns_name.www.gwbush.com
+    ServerAlias your_dns_name.www.gwbush.com
+
+    <Directory /home/user/application>
+        <FilesMatch ^.*\.fcgi$>
+            Options +ExecCGI
+            allow from all
+
+            <IfModule mod_perl.c>
+                SetHandler perl-script
+                PerlHandler Apache::Registry
+            </IfModule>
+
+            <IfModule mod_fastcgi.c>
+	        SetHandler fastcgi-script
+            </IfModule>
+        </FilesMatch>
+        Order allow,deny
+        Allow from all
+    </Directory>
+
+</VirtualHost>
+
+Alternatively, if your system is set to already execute files with a
+.cgi extension as CGI, or you have "AllowOverride all" set, then you
+should just be able to copy the entire PSA application somewhere under
+your webroot.
+

@@ -1,0 +1,4 @@
+dsn dbi:Oracle:
+user samv
+auth fmianggo
+schema t/psatest

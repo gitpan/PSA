@@ -1,0 +1,72 @@
+Perl Server Applications, version 0.20
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+It seems that everyone has their own CGI application development
+framework.  Why, in 2004, would I release another into the mess?
+
+It started because I needed a framework that supported using Tangram
+well, as well as different modes of running the applications
+(FastCGI/mod_perl/etc).  None of the frameworks I saw quite cut it,
+too many of them were far too focused on mod_perl.  Not that mod_perl
+isn't a very successful framework for developing applications, but for
+my needs it was too heavy and inflexible.  I don't *like* having to
+have a seperate installation of Apache for every web application that
+I run.  I *like* Unix process seperation in my applications.  I *like*
+'black box' web servers :).
+
+It's come this far, and I see no glaring reason for it to be silenced,
+merely because other app dev frameworks are more well established.
+This is Perl, after all - and choice and variety are good.
+
+So, I release my (spartan by design) framework, and if you don't like
+it, please feel free to ignore it.
+
+Some might not want to use the entire framework, and just like one or
+two pieces.  Many of the pieces stand on their own.
+
+What this framework supports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   - Accepting requests via CGI, mod_perl, FastCGI via
+     PSA::Acceptor::AutoCGI.  Generates fully encapsulated
+     PSA::Request::CGI objects.  Built-in process manager for FastCGI,
+     via FCGI::ProcManager.  Can be passed a plain hash instead of
+     using the real process environment for CGI/1.1 specified
+     variables.
+
+   - simple CGI-like scriplets (PSA pages), but more OO-style.  The
+     request and response objects are merely passed in over the stack.
+     Standard output isn't captured like CGI; you have to update the
+     response object.  `use strict' is enabled by default; a special
+     version of Acme::Code::Police for PSA pages that `no strict' is
+     planned.
+
+   - Apache::Registry-like caching of compiled pages, provided by the
+     very simple PSA::Cache class.
+
+   - Responding via simple PSA::Response::HTTP objects, which can be
+     hooked up to an arbitrary templating system, or a local file
+     (internal redirects are used to enable caching, and use of
+     sendfile() by the web server).
+
+   - Templated response using any toolkit you like.  For the West Side
+     Massiv, there's Template Toolkit support, and in the East Side we
+     'av a cross between ePerl and embPerl.  If you're feeling
+     particularly sick, you could even respond with some cack
+     templating system like HTML::Template or HTML::Mason.  The choice
+     is yours.
+
+   - Good interactive, command line use of the `CGI' programs; no more
+     fiddling with environment variable names - excellent for
+     debugging.
+
+   - Integrates very well with Tangram or Pixie style persistence
+     frameworks.
+
+   - Session management, either via an object stored in Storage or a
+     standard "flat" session file via Apache::Session
+
+   - Test framework based on Test::More for writing
+     short test fragments for your application
+
+For more information, see the examples/ directory in the distribution.
+
+  -- Sam Vilain, <sam@vilain.net>

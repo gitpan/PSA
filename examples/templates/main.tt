@@ -1,0 +1,7 @@
+<p>This is a Template Toolkit Template
+
+<p>[% message %]
+
+<p>This is still the template!
+
+<p>Care to go to the <a href="[% uri("next.pl") %]">next page?</a>

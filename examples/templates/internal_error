@@ -1,0 +1,10 @@
+<html>
+<head>
+<title>Internal Error</title>
+</head>
+<body>
+<h1>Internal Error</h1>
+<p>Something died [% ( $stage == "template" ? "in Template Processing" : "during logic execution" ) %], exception was:</p>
+<pre>[% exception %]</pre>
+</body>
+</html>

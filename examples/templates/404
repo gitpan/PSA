@@ -1,0 +1,12 @@
+<html>
+<head>
+<title>404 File Not Found</title>
+</head>
+<body>
+<h1>404 File Not Found</h1>
+
+<p>I'm sorry, but <tt>[% page %]</tt> was not found or is not
+executable.</p>
+	
+</body>
+</html>

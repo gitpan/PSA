@@ -1,0 +1,16 @@
+HTTP/1.1 302 Found
+Content-Length: 190
+Content-Type: text/html
+Location: http://www.theregister.co.uk/
+Pragma: no-cache
+Expires: Sun, 15 Aug 2004 22:27:35 GMT
+Date: Sun, 15 Aug 2004 22:37:35 GMT
+
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0; http://www.theregister.co.uk/" />
+  </head>
+  <body>
+    <a href='http://www.theregister.co.uk/'>redirect ye</a>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+[% INCLUDE header
+    title = "Environment"
+%]
+<p>The contents of the environment are:</p>
+<pre>
+[% FOREACH key = envr.keys.sort %]
+[% key %] = [% envr.$key %]
+
+[% END %]
+</pre>
+<p>$0 is [% zero %]</p>
+<p>uri for next access is [% uri("absolute", "self") %]</p>
+[% PROCESS footer %]

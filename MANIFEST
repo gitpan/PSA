@@ -1,0 +1,112 @@
+MANIFEST
+README
+INTRO.txt
+Makefile.PL
+
+lib/PSA.pm				Request centre object
+lib/PSA/Config.pm			Configuration
+
+lib/PSA/Acceptor.pm			Abstract base class for Acceptors
+lib/PSA/Acceptor/AutoCGI.pm		CGI Acceptor
+lib/PSA/Acceptor/Dummy.pm		Dummy/interactive Acceptor
+
+lib/PSA/Request.pm			Abstract base class for requests
+lib/PSA/Request/CGI.pm			CGI request encapsulator
+lib/PSA/Request/CGI-CGI.pm		Old version of CGI encapsulator
+
+lib/PSA/Response.pm			Abstract base class for responses
+lib/PSA/Response/HTTP.pm		HTTP responses
+lib/PSA/Response/ImageMagick.pm		Image responses
+
+lib/PSA/Cache.pm			For cached scripts
+lib/PSA/Cache/Entry.pm			Entry in cache
+lib/PSA/Cache/Entry/PSA.pm		PSA-preprocessed entries
+lib/PSA/Cache/Entry/ePerl.pm		ePerl-preprocessed entries
+
+lib/PSA/Session.pm			Sessions via Tangram objects
+lib/PSA/Heap.pm				Sessions via Apache::Session
+
+lib/PSA/Capture.pm			Capture output, for ePerl/PSA
+lib/PSA/SandBox.pm			
+lib/PSA/SandCastle.pm
+
+lib/PSA/ProcManager.pm			FCGI Process Manager wrapper
+
+lib/PSA/Profiling.pm			Handy functions for profiling PSA apps
+
+lib/PSA/Test.pm
+lib/PSA/Test/Builder.pm
+
+lib/PSA/POE.pm				Run PSA pages in a POE environment
+lib/POE/Session/PSA.pm			PSA pages as POE sessions
+
+lib/PSA/Audit.pm			Auditable system events
+lib/PSA/Error.pm			Error objects
+
+sqlnet.log
+t/01-cgi.t
+t/02-cache.t
+t/03-acceptor.t
+t/04-heap.t
+t/06-poe-session-psa.t
+t/07-nopoe.t
+t/08-spawn.t
+t/09-config.t
+t/10-session.t
+t/11-psa.t
+t/12-response.t
+t/13-complex-posts.t
+t/13-multipartdata
+t/13-postdata
+t/13-xmldata
+t/psatest.dsn
+t/test.css
+t/test.out
+t/testimg.jpg
+
+t/README.pod
+t/testconf.yml
+t/TestDB.pm
+t/templates/error-template1.pl
+t/templates/psatest.psa
+t/templates/testdir2/.exists
+t/templates/testdir/foobar.pl
+t/templates/testdir/index.pl
+t/poe-bin/t1/fourth.pl
+t/poe-bin/t1/next.pl
+t/poe-bin/t1/_stop.pl
+t/poe-bin/t1/third.pl
+t/poe-bin/t1/whassap.pl
+t/poe-bin/t2/doitagain.pl
+t/poe-bin/t2/doit.pl
+t/poe-bin/t2/forkit.pl
+t/poe-bin/t2/hitmeoncemore.pl
+t/poe-bin/t2/whassap.pl
+t/poe-bin/t2/yoyo.pl
+
+debian/changelog
+debian/control
+debian/copyright
+debian/README.Debian
+debian/rules
+
+META.yml                                 Module meta-data (added by MakeMaker)
+
+examples/etc/psa.yml			Configuration for example application
+examples/.htaccess
+examples/index.cgi
+examples/open-rewrite.pl
+examples/psa-bin/dumpenv.pl
+examples/psa-bin/issue.pl
+examples/psa-bin/issue/Template.pl
+examples/psa-bin/main.pl
+examples/psa-bin/next.pl
+examples/psa-bin/whassap.pl
+examples/templates/404
+examples/templates/dumpenv
+examples/templates/footer
+examples/templates/header
+examples/templates/internal_error
+examples/templates/main.tt
+
+

@@ -1,0 +1,24 @@
+
+# example .htaccess file for Apache, that only lets access happen via
+# the index.cgi script.  Other web servers will probably configure
+# external application servers in a much more sensible and intuitive
+# fashion.
+
+<Files *>
+    deny from all
+</Files>
+
+<FilesMatch ^.*\.cgi$>
+    Options +ExecCGI
+    allow from all
+
+    <IfModule mod_perl.c>
+        SetHandler perl-script
+        PerlHandler Apache::Registry
+    </IfModule>
+
+    <IfModule mod_fastcgi.c>
+        SetHandler fastcgi-script
+    </IfModule>
+
+</FilesMatch>

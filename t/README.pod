@@ -1,0 +1,66 @@
+# the third rule of Perl club is a simple statement of fact: pod is sexy.
+
+=head1 TEST SUITE OVERVIEW
+
+The test suite covers the modules described in the README, and for
+each of those modules, tests against the descriptions in the
+individual modules.
+
+The test suites are built using L<Test::More>.
+
+The order is 
+
+=over 4
+
+=item F<t/01-cgi.t>
+
+Tests encapsulating the CGI environment to an object.  Tests the
+L<PSA::Request::CGI> class.
+
+=item F<t/02-cache.t>
+
+Tests execution of pages, and that the cache that validates them
+works.
+
+Tests L<PSA::Cache> and L<PSA::Cache::Entry>.
+
+=item F<t/03-acceptor.t>
+
+Tests L<PSA::Acceptor::AutoCGI>, and that the framework correctly
+detects when to "exit" at the end of a request.
+
+=item F<t/04-heap.t>
+
+Tests session saving via Apache::Session
+
+=item F<t/05-rawxml.t>
+
+Tests the PSA::Acceptor::XML
+
+=back
+
+=head2 TO-DO
+
+The following test suites need to be written.
+
+=item F<t/NN-request.t>
+
+Tests the variety of PSA::Request objects.
+
+=item F<t/NN-response.t>
+
+Tests the variety of PSA::Response objects.
+
+=item F<t/NN-http.t>
+
+Tests PSA::Response::HTTP objects.
+
+=item F<t/NN-xmlsoap.t>
+
+Tests simple XML and SOAP request and response objects.
+
+=item F<t/NN-ebxml.t>
+
+Tests sending and receiving ebXML messages.
+
+=back

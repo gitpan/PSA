@@ -1,0 +1,20 @@
+Source: libpsa-perl
+Section: interpreters
+Priority: optional
+Build-Depends: debhelper (>= 3.0.5), perl (>= 5.6.0-17)
+Maintainer: Sam Vilain <sam@vilain.net>
+Standards-Version: 3.5.1
+
+Package: libpsa-perl
+Architecture: all
+Depends: ${perl:Depends}, libpod-constants-perl (>= 0.15)
+Suggests: libfcgi-perl, libfcgi-procmanager-perl, libtangram-perl (>= 2.07.3)
+Description:  Perl Server Applications - application framework
+ That's it.  No fluff, no special non-perl control structures.  Each
+ page gets converted to a sub.  Supports Template Toolkit,
+ Embperl(ish), or in fact any template toolkit with about 5 lines of a
+ closure.
+ .
+ The toolkit is designed to work with mod_perl, as well as the
+ ultra-scalable server-agnostic FastCGI protocol, or similar N-tier
+ equivalents: SpeedyCGI, NSAPI, etc.
