@@ -35,15 +35,12 @@ program is considered to be an external FastCGI daemon.
 =cut
 
 use IO::Handle;
-use base qw(PSA::Acceptor);
+use base qw(PSA::Acceptor::Forked);
 use PSA::Request::CGI;
 
 our $fields = {
 	       transient => {
 			     fastcgi => undef,
-			     manager => undef,
-			     pre_fork => undef,
-			     post_fork => undef,
 			    },
 	       string => {
 			  socket => undef,
@@ -64,15 +61,11 @@ sub _fill_init_default {
     my $self = shift;
     my $x;
 
-    if (not$self->get_socket and ($x= $ENV{FCGI_SOCKET})) {
+    if (not$self->get_socket and ($x= $ENV{FASTCGI_SOCKET_PATH})) {
 	$self->set_socket($x);
     }
 
-    if (not $self->get_bind and ($x= $ENV{FCGI_ADDR})) {
-	$self->set_bind($x);
-    }
-
-    if (not $self->get_nproc and ($x= $ENV{FCGI_NPROC})) {
+    if (not $self->get_nproc and ($x= $ENV{FASTCGI_NPROC})) {
 	$self->set_nproc($x);
     }
 
@@ -109,7 +102,7 @@ sub new {
 		delete $ENV{PSA_REEXEC};
 	    }
 	    umask(0);
-	    $sock = FCGI::OpenSocket($self->socket, 5)
+	    $sock = FCGI::OpenSocket($self->socket, 100)
 		or die $!;
 	    umask(022);
 	    print STDERR "${0}[$$]: listening on ".$self->socket."\n";
@@ -143,7 +136,7 @@ sub new {
 
     if ( defined($self->nproc) && $self->nproc > 1 ) {
 
-	eval "use PSA::ProcManager";
+eval "use PSA::ProcManager";
 	die "nproc set, Process Manager failed to load; $@" if $@;
 
 	$self->set_manager
@@ -158,6 +151,8 @@ sub new {
     return $self;
 }
 
+# this was part of a configuration re-loading system that never
+# worked.  FIXME.
 sub rename_socket {
     my $self = shift;
     print STDERR "${0}[$$]: renaming socket\n";
@@ -170,16 +165,6 @@ sub rename_socket {
 
     $self->set_socket($b);
     $self->set_renamesock();
-}
-
-sub add_pre_fork {
-    my $self = shift;
-    push @{$self->{pre_fork} ||= []}, @_;
-}
-
-sub add_post_fork {
-    my $self = shift;
-    push @{$self->{post_fork} ||= []}, @_;
 }
 
 =item $acceptor->get_request
@@ -261,13 +246,14 @@ sub flush {
 }
 
 37;
+
 __END__
 
 =back
 
-=head2 AUTHOR
+=head1 SEE ALSO
 
-Sam Vilain, <sv@snowcra.sh>
+L<PSA>, L<PSA::Acceptor>, L<PSA::Acceptor::Dummy>, L<PSA::Request::CGI>
 
 =cut
 

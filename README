@@ -1,7 +1,7 @@
-Perl Server Applications, version 0.20
+Perl Server Applications, version 0.50
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 It seems that everyone has their own CGI application development
-framework.  Why, in 2004, would I release another into the mess?
+framework.  Why, in 2003, would I release another into the mess?
 
 It started because I needed a framework that supported using Tangram
 well, as well as different modes of running the applications
@@ -27,10 +27,10 @@ What this framework supports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    - Accepting requests via CGI, mod_perl, FastCGI via
      PSA::Acceptor::AutoCGI.  Generates fully encapsulated
-     PSA::Request::CGI objects.  Built-in process manager for FastCGI,
-     via FCGI::ProcManager.  Can be passed a plain hash instead of
-     using the real process environment for CGI/1.1 specified
-     variables.
+     PSA::Request::CGI objects.  Built-in automatic process manager
+     for FastCGI, via FCGI::ProcManager.  Can be passed a plain hash
+     instead of using the real process environment for CGI/1.1
+     specified variables.
 
    - simple CGI-like scriplets (PSA pages), but more OO-style.  The
      request and response objects are merely passed in over the stack.
@@ -40,11 +40,11 @@ What this framework supports
      planned.
 
    - Apache::Registry-like caching of compiled pages, provided by the
-     very simple PSA::Cache class.
+     simple yet effective PSA::Cache class.
 
    - Responding via simple PSA::Response::HTTP objects, which can be
      hooked up to an arbitrary templating system, or a local file
-     (internal redirects are used to enable caching, and use of
+     (internal redirects can be used to enable caching, and use of
      sendfile() by the web server).
 
    - Templated response using any toolkit you like.  For the West Side
@@ -54,19 +54,26 @@ What this framework supports
      templating system like HTML::Template or HTML::Mason.  The choice
      is yours.
 
-   - Good interactive, command line use of the `CGI' programs; no more
-     fiddling with environment variable names - excellent for
-     debugging.
+   - Good interactive, command line debugging of your program via the
+     psa script; no more fiddling with environment variable names or
+     shoddy in-server debugging systems - excellent for debugging.
 
    - Integrates very well with Tangram or Pixie style persistence
      frameworks.
 
-   - Session management, either via an object stored in Storage or a
-     standard "flat" session file via Apache::Session
+   - Session management, either via an object stored in Tangram/Pixie
+     Storage or a standard "flat" session file via Apache::Session
 
    - Test framework based on Test::More for writing
      short test fragments for your application
 
-For more information, see the examples/ directory in the distribution.
+For more information, see the PSA::Intro man page, and the examples/
+directory in the distribution.
+
+What's new in 0.50
+~~~~~~~~~~~~~~~~~~
+0.50 adds a shedload of documentation, as well as `finalising' some of
+the best practices that were being used, and getting rid of the parts
+that had been found not to work.
 
   -- Sam Vilain, <sam@vilain.net>

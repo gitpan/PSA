@@ -1,0 +1,24 @@
+
+Before the 0.50 release:
+
+  - tidy up the examples in the examples/ directory, provide some more
+    examples including trivial ones with no controllers, just
+    templates.
+
+  - make sure the default scriptlets and templates in share/ are
+    delivered during `make install' phase, and that they are actually
+    generic enough to be useful for building sites...
+
+  - finish off the psa wrapper script, and PSA::Init.
+
+  - make all the tests pass and make new tests for untested
+    functionality (*sigh* - SNAFU - at least the documentation is
+    fairly comprehensive though)
+
+For a 0.60 release:
+
+  - a system of templates and controller scripts to deliver a
+    Maypole-like system for direct editing of model objects.
+
+  - add support to psa for pre-building partial static content in a
+    site from a set of templates.

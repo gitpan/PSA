@@ -1,0 +1,16 @@
+<% title = "Site Undergoing Maintenance" %>
+
+<% PROCESS err/contacts.tt %>
+
+<% body = BLOCK %>
+<div style="padding: 1em">
+<h1>Site Not Available</h1>
+
+<p>The site is down or currently undergoing maintenance,
+  and hence is unavailable for use at this time.</p>
+
+<p class="bodytext">Try again shortly, but if problems continue please
+  contact us.
+</div>
+
+<% END %>

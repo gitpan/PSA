@@ -6,7 +6,7 @@ PSA::Cache::Entry - an entry in a PSA::Cache
 
 =head1 SYNOPSIS
 
-t.b.c
+ my $entry = PSA::Cache::Entry->new
 
 =head1 DESCRIPTION
 
@@ -159,7 +159,7 @@ sub compile($$) {
 
     # note the use of the compiler directive to tell it where the
     # source file is!  Also
-    $self->{code} = eval $self->{preprocessed};
+    $self->{code} = DMZ::eeval($self->{preprocessed});
     $self->{error} .= $@ if ($@);
     #die $@ if $@;
     if (ref $self->{code} ne "CODE" or $self->{error}) {
@@ -285,8 +285,10 @@ sub errors($) {
 
 =head1 SEE ALSO
 
-L<PSA::Cache>, L<PSA::Cache::Result>
+L<PSA::Cache>, L<PSA::Cache::Entry::ePerl>
 
 =cut
+
+{ package DMZ; sub eeval { return (eval $_[0]); } }
 
 "legalise Cannabis!";

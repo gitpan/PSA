@@ -1,0 +1,342 @@
+
+=head1 NAME
+
+PSA::Intro - an introduction to Perl Server Applications
+
+=head1 GETTING STARTED
+
+To get your PSA applications working, you'll need to tell your web
+server to execute it as a CGI, FastCGI or mod_perl program.  This
+procedure is described in more detail at L<PSA::Installation>.
+
+=head1 A Lightning Intro to a PSA app
+
+The concept with PSA is a single entry point for dynamic requests from
+an individual application, a single schema for the application, and a
+set of templates.
+
+A normal directory layout consists of these entries; note that
+everything should be able to be configured, but if you stick to these
+defaults you'll end up with consistently organised programs;
+
+     psa.cgi        - "single entry point", not always required
+     /etc/psa.yml   - application configuration, see PSA::Config
+
+     /etc/schema.t2 - Model - application schema
+     /lib/          - Model - additional business logic
+
+     /psa-bin/      - Controller - dynamic page logic
+
+     /templates/    - View - Template Toolkit or similar templates
+
+     /docs/         - webroot
+     /docs/js/      - eg. of `flat' content
+     /docs/images/  - etc
+     /docs/css/     - etc
+
+     /sbin/         - administrator scripts, including setup script
+     /t/            - (command line) application test suite
+
+     /var/            - symlinks(perhaps) to correct places to store:
+     /var/lib/session - session information (with PSA::Heap),
+     /var/lock/       - session locks (with PSA::Heap),
+     /var/cache/      - pre-cached versions of things
+     /var/log/        - log files (with PSA::Log)
+
+     /inc           - psa webroot includes
+
+These directories all hand off the psa root, all the pages can expect
+this to be the OS Current Working Directory.
+
+Of these locations, by far the most important pieces to talk about are
+the directories which control the B<data model>, the B<controller>
+scripts which drive the application, and the folder that contains the
+I<templates> that drive the B<view>.
+
+=head2 Model
+
+Note that PSA isn't dependant on the use of T2 as a data model, but if
+you were to plug in another database abstraction here nothing of
+substance would be changed, really.
+
+Modules like PSA are 90% style and 10% actual innovations and code,
+anyway :-).
+
+=over
+
+=item F<etc/I<site_name>.dsn>
+
+The F<I<site_name>> part is configured in F<etc/psa.yml>.
+
+This file specifies where to find the database that drives this
+application.  This file contains information for loading the
+I<application schema>, normally a L<T2::Schema> object structure.
+
+=item F<etc/I<site_name>.t2>
+
+PSA has integral support for automatically loading T2 application
+schema, for YRAD.  This file is a L<Storable> dump of a L<T2::Schema>
+structure, which can automatically set up L<T2::Storage>, as well as
+generate accessors for each package via L<Class::Tangram::Generator>.
+
+This file can be generated with the Visual T2 program, to be found
+with the T2 module suite on CPAN.  Support for alternate models will
+gladly be coded and integrated, according to interest.
+
+=item F<lib/>
+
+In the F<lib/> folder, you place Perl modules that define extra
+methods for your classes.  All of the accessors and other stuff that
+defines a class can be left out in these files.
+
+As L<Class::Tangram> is rather anal about being compliant to all best
+practice rules for Object Orientation, you can be sure that simply
+defining methods like C<set_foo>, you can be sure that all methods of
+setting a property will be changed.
+
+=item F<t/>
+
+The primary function of the tests in this directory are to I<test the
+data model>.  You should code tests for I<every application method
+that you write, as you write them>.  Not to do so is to take two steps
+backwards before you begin.
+
+=back
+
+=head2 View
+
+With the I<view>, we're talking about sending back the results of the
+operation of the application server to the user.
+
+The way it works in PSA is that a special controller script called
+C<issue.pl> is called, which in turn will crank up the toolkit of your
+choice (as configured in the F<psa.yml>) against one of the files in
+the F<templates/> folder.
+
+=over
+
+=item F<templates/>
+
+Default location for all templates.  With the default controller
+scripts, you can usually just throw templates in here and then access
+them as if they were flat pages in F<docs/>.
+
+However, it may be another matter again to convince your web server to
+treat the URIs for these templates as dynamic requests and not 404s.
+You are encouraged to read L<PSA::Installation> for some best practice
+approaches to this problem.
+
+The default controllers look in a number of places for system and
+local template inclusions, and this can lead to a style of application
+development similar to L<Maypole>.  One of the early key demo apps of
+PSA will include such an example.
+
+=item F<docs/>
+
+Default location for the webroot, where flat and pre-built files go.
+
+It is assumed in several places (I think...) that the root of this
+folder corresponds to the `root' URI of your application.  Though
+whether or not this assumption will affect anything at all for any
+given piece of code is another point.
+
+The dynamic/handled portions of the site as assumed to either live
+beneath this location somewhere, or be mapped on top of it using one
+of many approaches pioneered by Apache (if pioneered is the right word
+for allowing anyone to contribute code to make this stuff happen in
+any conceivable manner).
+
+=back
+
+=head2 Controller
+
+In some ways, the controller portion of the application is the most
+important.  After all, it is the part that I<does something>.
+
+However, in fact it turns out that the success or failure of an
+application is more directly tied to the quality of its data model,
+and the adaptability of the interface to new requirements - for
+everything else can be replaced in parts - but the data model ends up
+echoing itself over every part of the program, and a hindered design
+process stifles everything.
+
+Besides, controller scripts should usually be calling designed and
+tested methods of objects in the data model.
+
+=over
+
+=item F<psa-bin/>
+
+The F<psa-bin/> directory is loosely modelled after the success of
+F<cgi-bin/> directories, in terms of ease of use.
+
+That is, most of the time you don't want to set up a new class, add it
+to a config here, set up a handler there - you just want to put a
+script that runs when a certain URL is accessed into a file with the
+same name as the URL.  Dead simple.
+
+But even a first glance at a F<psa-bin/> I<scriptlet> will reveal that
+these are nothing at all like CGI scripts - some controller scripts
+will be only two lines long.  That, and for some reason C<use strict>
+and C<use warnings> have been mysteriously and permanently switched
+on.
+
+That is because files in this directory are pre-processed before they
+are run.  They are compiled into a subroutine, and passed (at least) a
+single item on their argument stack - the PSA object (see L<PSA>).
+This is performed by L<PSA::Cache::Entry>.
+
+In this PSA object, you'll find several other objects.  These
+correspond (in purpose) to the five global variables that are
+accessible in an ASP page, though that is such a grotesque analogy to
+make that ... oh, look, just forget I made that reference.
+
+For example, one of these objects is a Request object (see
+L<PSA::Request>), which is a I<complete> encapsulation of the request,
+not a half-hearted one that can only be read once.  Also included is
+the Response object (see L<PSA::Response>), Storage class (such as a
+L<T2::Storage>), application schema for introspection (such as
+L<T2::Schema>) and a session-specific dumping ground for state (the
+session object - see L<PSA::Session>).  Having these things "just
+there" is referred to as being Darned Handy(tm).
+
+Like the F<templates/> directory, the F<psa-bin/> directory is subject
+to an include path (probably exactly the same include path!).
+
+=item F<psa-bin/whassap.pl>
+
+The default wrapper script, B<psa>, calls this script straight after
+it has received a hit and has converted it into a L<PSA::Request>
+object.
+
+What the default F<whassap.pl> does is;
+
+=over
+
+=item *
+
+using L<PSA::Cache> methods to scan the F<psa-bin/> directories,
+determine whether the request is a flat file, or a dynamic request.
+If it is a flat file this is served via another entry point.
+
+=item *
+
+if the request is to be considered dynamic, then the session is opened
+based on an auto-detected session ID via the L<PSA::Session> (or
+perhaps L<PSA::Heap>) class.
+
+=item *
+
+call the appropriate controller scriptlet inside an C<eval { }> block.
+
+=item *
+
+attempt to commit the database handle, retrying the scriptlet again up
+to three times in the event of a ROLLBACK REQUIRED message from the
+database.
+
+=item *
+
+catch errors in the controller scripts and other conditions, and if
+there are any, set up the response object appropriately.
+
+=back
+
+Normally, the controller scriptlet will perform a database operation
+or two and then attach the response object to a template, along with
+references to the database objects.
+
+It's not rocket science at all, and alternate schemes of this core
+operation are easily substituted by providing a custom F<whassap.pl>.
+
+=item F<psa-bin/issue.pl>
+
+It is the job of the F<issue.pl> script to issue responses.
+
+Currently, this determines which templating API is being used by the
+controller script that ran, and then calls the appropriate
+template-specific scriptlet to actually print the response.
+
+=back
+
+=head2 Other components
+
+=over
+
+=item F<psa.cgi> - Entry point
+
+Depending on how the application is run, you might have an explicit
+script inside the webroot that kicks off the application.  Usually you
+can just use the generic L<psa> script.
+
+=item F<etc/psa.yml> - Configuration
+
+This is the default application configuration file.  It is possible to
+set up the configuration of several installations of the same
+application using this system, in effect overriding configuration
+options depending on the system environment (host name, web root
+directory, etc).  See L<PSA::Config> for the low-down.
+
+=item F<inc/> - PSA includes
+
+An alternative to listing includes in the psa.yml, you may instead
+place symlinks to other PSA roots in the F<inc/> folder.  The
+components in those folders will be included as fall-backs.
+
+That is, the default C<psa> script that starts up PSA applications
+will set up the appropriate pieces of the PSA system to fall-back to
+the included application components.  Components can be shipped with
+Perl modules; several core files are supplied with PSA itself and
+delivered to F<$PREFIX/share/psa>.
+
+Because of this, you can create a new PSA application just by making
+one of the above directories (for example, F<templates/>) and just
+start setting up pieces.  Probably you'd want to start with a
+configuration file - C<etc/psa.yml> - see L<PSA::Config> for details.
+
+=item F<sbin/>
+
+=item F<var/>
+
+C<var/> is the traditional UNIX name for a directory which holds
+"machine specific state information"; cached versions of things.  With
+a properly database-driven application, the amount of data that ends
+up in here is minimal.
+
+=item F<var/lib/session>
+
+session information (with PSA::Heap)
+
+=item F<var/lock/>
+
+session locks (with PSA::Heap)
+
+=item F<var/cache/>
+
+pre-cached versions of templates, if using the standard scripts and
+Template Toolkit.
+
+=item F<var/log/>
+
+log files (eventually).
+
+=back
+
+=head1 SUMMARY
+
+This web application development framework does not really offer that
+much in the way of specific features.  It is also clearly lacking
+other features, like integrated exception management, logging and
+auditing, access control and authentication, etc.
+
+However, what features have been implemented are quite stable, and
+even in the absence of such features you will hopefully discover the
+ease, speed and flexibility of the PSA suite.
+
+=head2 Further reading
+
+The best place to look after reading this file will certainly be the
+F<examples/> folder in the PSA distribution.
+
+=cut
+

@@ -1,0 +1,39 @@
+<% title = "404 not found" %>
+
+<% PROCESS err/contacts.tt %>
+
+<% body = BLOCK %>
+
+  <h1>404 - Location not found</h1>
+
+<% IF referrer && referrer.match("marketview.co.nz") %>
+
+  <p>Whoops!  A broken link on one of our sites!  You don't need to
+    report this yourself - this occurance has been logged and will be
+    investigated by our web services team. However, if you have an
+    urgent requirement, please contact us directly.
+
+  <dl>
+    <dt>Referring page:</dt>
+    <dd><tt><% referrer | html %></tt></dd>
+    <dt>Invalid location:</dt>
+    <dd><tt><% uri.path | html %></tt></dd>
+    <dt>Invalid URL:</dt>
+    <dd><tt><% uri('absolute', uri.path ) %></tt></dd>
+  </dl>
+<% ELSE %>
+<p>
+   I'm sorry, but <tt><% uri.path %></tt> is not a valid URL on
+this site.
+</p>
+
+<% IF referrer %>
+<p>Please refer this problem to the <a href="<% referrer %>">referring page</a>
+<% END %>
+
+<p>If you prefer, you can visit the <a href="<% uri('/')
+%>">Home Page</a>.
+
+<% END %>
+
+<% END %>

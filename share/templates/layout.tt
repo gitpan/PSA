@@ -1,0 +1,7 @@
+<% DEFAULT
+  template = "index.html"
+  layout = "main"
+-%>
+<%- PROCESS $template -%>
+<%- layoutfile = "layout/" _ layout _ ".tt" %>
+<%- INCLUDE $layoutfile -%>

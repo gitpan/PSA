@@ -10,7 +10,10 @@ t.b.c.
 
 =head1 DESCRIPTION
 
-t.b.c.
+Used to be useful with page types like L<PSA::Cache::Entry::ePerl> and
+L<PSA::Cache::Entry::PSA>, that printed their output to STDOUT.
+However, given the flaky nature of the debugger etc with this sort of
+arrangement, this approach was deprecated.
 
 =cut
 
@@ -107,6 +110,7 @@ sub TIEHANDLE {
 
 sub PRINT {
     my ($self) = shift;
+    # oof, how little I knew when I wrote this.
     ${$self->{where}} .= join('', map { defined $_?$_:""} @_);
     return;
 }

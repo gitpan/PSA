@@ -1,4 +1,4 @@
-dsn dbi:Oracle:
-user samv
-auth fmianggo
+dsn dbi:SQLite:testdb
+user 
+auth 
 schema t/psatest

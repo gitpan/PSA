@@ -1,4 +1,7 @@
 
+# this is a utility class... captures STDOUT to a buffer.  Doesn't
+# work with apps that do stdlib IO ;)
+
 package Capture;
 
 use base qw(Class::Tangram);

@@ -37,6 +37,8 @@ PSA::Response::HTTP - a HTTP response object
 
 =cut
 
+use constant DEBUG => 0;
+
 use strict;
 BEGIN { eval "use warnings;" }
 use Carp;
@@ -214,6 +216,9 @@ sub httpheader {
 
     push @header, "Date: ".expires(time, "http");
 
+    print STDERR __PACKAGE__ . ": >-\n",join("\n",@header)."\n...\n"
+	if DEBUG;
+
     return join "\r\n", @header, "", "";
 }
 
@@ -389,22 +394,22 @@ type too.
 
 =cut
 
-use File::MMagic;
+use vars qw($magic_loc $mm);
 use FileHandle;
 
 BEGIN {
     # Detect MIME magic settings
-    use vars qw($magic_loc $mm);
-    ($magic_loc) = map { ( -f $_ ? $_ : () ) }
-	qw(
-	   /usr/share/etc/magic
-	   /etc/magic
-	   etc/magic
-	  );
-    # Or fall back to defaults
-    $mm = File::MMagic::new($magic_loc or ());
+    eval 'use File::MMagic';
+    if ( !$@ ) {
+	($magic_loc) = map { ( -f $_ ? $_ : () ) }
+	    qw( etc/magic /usr/share/etc/magic /etc/magic );
+
+	# Or fall back to defaults
+	$mm = File::MMagic::new($magic_loc or ());
+    }
 }
 
+# guh.
 my %even_more_magic_types =
     ( js => "text/javascript",
       css => "text/css",
@@ -414,14 +419,18 @@ sub set_file {
     my $self = shift;
     my $value = shift;
 
-    my $type;
-    if ( $value =~ /\.(\w+)$/ and exists $even_more_magic_types{$1} ) {
-	$type = $even_more_magic_types{$1}
-    } else {
-	$type = $mm->checktype_filename($value);
-	# workaround "dumbass default" bug in Apache::MMagic
-	$type = "text/plain" if $type =~ m{^x-system/};
-    }
+    my $type = shift;
+    $type or do {
+	if ( $value =~ /\.(\w+)$/ and exists $even_more_magic_types{$1} ) {
+	    $type = $even_more_magic_types{$1}
+	} elsif ( $mm ) {
+	    $type = $mm->checktype_filename($value);
+	    # workaround "dumbass default" bug in Apache::MMagic
+	    $type = "text/plain" if $type =~ m{^x-system/};
+	} else {
+	    warn "No idea what type stream response is; assuming text/plain"
+	}
+    };
 
     $self->set_header(-type => $type);
     $self->set_header(-length => -s $value);

@@ -16,12 +16,12 @@ my $storage = T2::Storage->open("t/psatest");
 my $psa = new PSA(storage => $storage);
 
 $psa->attach_session();
-my $sess = $psa->heap_obj;
+my $sess = $psa->session;
 
 my $sid = $psa->sid;
 like($sid, qr/^[a-f0-9]{32}$/i, "Session ID of $sid");
 
-is(ref $sess, "PSA::Session", "PSA::Session->new()");
+is(ref $sess, "PSA::Session", "PSA->attach_session");
 
 my $rand_val = rand(42*69);
 $psa->heap->{test} = $rand_val;
@@ -35,10 +35,10 @@ is($psa->sid, $sid, "SID still intact");
 $psa->attach_session;
 is(ref $psa->heap, "HASH", "heap easily re-picked up");
 is($psa->heap->{test}, $rand_val, "Got the same heap back");
-is($psa->heap_obj->sid, $sid, "SID matches what we had");
-is($psa->heap_obj->hits, 2, "hit count increases");
+is($psa->session->sid, $sid, "SID matches what we had");
+is($psa->session->hits, 2, "hit count increases");
 
-$psa->detach_heap;
+$psa->detach_session;
 
 my @objects =
     ( (bless [ qw(foo bar) ], "This"),
@@ -51,7 +51,7 @@ my @objects =
 # `persistent' objects
 $psa->attach_session();
 is($psa->sid, $sid, "Sid remained the same after flush");
-is($psa->heap_obj->hits, 3, "hit count increases");
+is($psa->session->hits, 3, "hit count increases");
 my $old_struct = $psa->heap->{test_structure} =
     [
      some => "normal data",
@@ -71,7 +71,7 @@ $sess = undef;
 $psa->attach_session();
 is($psa->sid, $sid, "Sid remained the same after attach");
 
-is($psa->heap_obj->hits, 4, "hit count increases");
+is($psa->session->hits, 4, "hit count increases");
 #$psa->heap_obj->unflatten($psuedo_storage);
 
 #is($load_count, 0, "Load hasn't happened yet");

@@ -1,0 +1,15 @@
+<% title = "Internal Error" %>
+
+<% PROCESS err/contacts.tt %>
+
+<% body = BLOCK %>
+<div style="padding: 1em">
+<h1>Internal Error</h1>
+
+<p>An unspecified or unknown error condition has occurred.
+
+<p class="bodytext">Try again shortly, but if problems continue please
+  contact us.</p>
+</div>
+
+<% END %>

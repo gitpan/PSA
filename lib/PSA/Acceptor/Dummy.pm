@@ -170,6 +170,7 @@ sub get_request {
 
     return PSA::Request::CGI->fetch
 	( ($self->{sid_re} ? (sid_re => $self->{sid_re}) : ()),
+	  base => ($self->get_base || ""),
 	  env => \%env );
 }
 
@@ -224,9 +225,9 @@ __END__
 
 =back
 
-=head2 AUTHOR
+=head1 SEE ALSO
 
-Sam Vilain, <sv@snowcra.sh>
+L<PSA>, L<PSA::Acceptor::AutoCGI>, L<PSA::Request>
 
 =cut
 

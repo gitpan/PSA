@@ -1,5 +1,8 @@
 package Profiling;
 
+# eventually I hope to add some form of profiling support to PSA
+# applications...
+
 use Time::HiRes qw(gettimeofday tv_interval);
 use POSIX qw(ceil);
 use base qw(Exporter);

@@ -16,8 +16,15 @@ PSA::Test - for writing PSA regression tests
 PSA::Test is a class for writing short test scripts to run within the
 PSA environment.
 
+The idea is, that you write a PSA scriptlet that tests your data model
+in some way, and then put such a page in your controller (F<psa-bin/>)
+directory somewhere.  This is somewhat incompatible with the style of
+placing such tests in the F<t/> folder, so you will probably choose
+one style or another.
+
 It is modelled very closely on Schwern's C<Test::More> module.  Pieces
-are directly ripped off it.
+are directly ripped off it.  Largely because I couldn't inherit off
+it :-).
 
 =cut
 
@@ -115,6 +122,10 @@ sub plan {
     __PACKAGE__->export_to_level(1, __PACKAGE__, @imports);
 
 }
+
+=head1 TEST FUNCTIONS
+
+=over
 
 =item B<ok>, B<pass>, B<fail>
 
@@ -437,4 +448,12 @@ sub template {
 1;
 
 __END__
+
+=back
+
+=head1 SEE ALSO
+
+L<PSA>, L<PSA::Cache::Entry>
+
+=cut
 

@@ -1,0 +1,10 @@
+<% title = "Default Error Page" %>
+
+<% PROCESS err/contacts.tt %>
+
+<% body = BLOCK %>
+
+  <p>Well, you managed to produce an error with <tt><% request_uri %></tt>.
+    Aren't you clever.
+
+<% END %>

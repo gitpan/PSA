@@ -1,22 +1,30 @@
-MANIFEST
-README
-INTRO.txt
+MANIFEST				You're soaking in it!
+README					Brief introduction
+TODO					Immediate deficiencies
 Makefile.PL
+
+lib/PSA/Intro.pod			To be read first!
+lib/PSA/Installation.pod		How to install with a web server.
+
+psa.cgi					example PSA wrapper
+bin/psa					general purpose PSA wrapper - TO-DO
 
 lib/PSA.pm				Request centre object
 lib/PSA/Config.pm			Configuration
+lib/PSA/Init.pm				PSA single site starting system
+lib/PSA/All.pm				PSA multi-site starting system
 
 lib/PSA/Acceptor.pm			Abstract base class for Acceptors
 lib/PSA/Acceptor/AutoCGI.pm		CGI Acceptor
 lib/PSA/Acceptor/Dummy.pm		Dummy/interactive Acceptor
+lib/PSA/Acceptor/Forked.pm		Base class for forking acceptors
+lib/PSA/Acceptor/HTTP.pm		RAW http acceptor - TO-DO
 
 lib/PSA/Request.pm			Abstract base class for requests
 lib/PSA/Request/CGI.pm			CGI request encapsulator
-lib/PSA/Request/CGI-CGI.pm		Old version of CGI encapsulator
 
 lib/PSA/Response.pm			Abstract base class for responses
 lib/PSA/Response/HTTP.pm		HTTP responses
-lib/PSA/Response/ImageMagick.pm		Image responses
 
 lib/PSA/Cache.pm			For cached scripts
 lib/PSA/Cache/Entry.pm			Entry in cache
@@ -34,17 +42,13 @@ lib/PSA/ProcManager.pm			FCGI Process Manager wrapper
 
 lib/PSA/Profiling.pm			Handy functions for profiling PSA apps
 
-lib/PSA/Test.pm
-lib/PSA/Test/Builder.pm
+lib/PSA/Test.pm				For writing pretty test scripts
+lib/PSA/Test/Builder.pm			helper module
 
 lib/PSA/POE.pm				Run PSA pages in a POE environment
 lib/POE/Session/PSA.pm			PSA pages as POE sessions
 
-lib/PSA/Audit.pm			Auditable system events
-lib/PSA/Error.pm			Error objects
-
-sqlnet.log
-t/01-cgi.t
+t/01-cgi.t				various tests...
 t/02-cache.t
 t/03-acceptor.t
 t/04-heap.t
@@ -93,9 +97,8 @@ debian/rules
 META.yml                                 Module meta-data (added by MakeMaker)
 
 examples/etc/psa.yml			Configuration for example application
-examples/.htaccess
-examples/index.cgi
-examples/open-rewrite.pl
+examples/.htaccess			this example application is a little
+examples/index.cgi			degenerate, really.  TO-DO.
 examples/psa-bin/dumpenv.pl
 examples/psa-bin/issue.pl
 examples/psa-bin/issue/Template.pl
@@ -109,4 +112,45 @@ examples/templates/header
 examples/templates/internal_error
 examples/templates/main.tt
 
+share/README				A big mess of ripped out examples
+share/psa-bin/auth/bad.pl		these pages will form the
+share/psa-bin/auth/failed.pl		basis of the skeleton controllers
+share/psa-bin/auth/only.pl		and templates...
+share/psa-bin/auth/onlysuper.pl
+share/psa-bin/err/handler.pl
+share/psa-bin/index.pl
+share/psa-bin/issue.pl
+share/psa-bin/issue/RPC.pl
+share/psa-bin/issue/Template.pl
+share/psa-bin/login.pl
+share/psa-bin/logout.pl
+share/psa-bin/prefs/checkpasswd.pl
+share/psa-bin/prefs/genpasswd.pl
+share/psa-bin/prefs/passwd.pl
+share/psa-bin/prefs/profile.pl
+share/psa-bin/prefs/promptpasswd.pl
+share/psa-bin/session/close.pl
+share/psa-bin/session/open.pl
+share/psa-bin/session/resume.pl
+share/psa-bin/session/suspend.pl
+share/psa-bin/whassap.pl
+share/templates/blank.html
+share/templates/err/401.tt
+share/templates/err/404.tt
+share/templates/err/500.tt
+share/templates/err/503.tt
+share/templates/err/contacts.tt
+share/templates/err/default.tt
+share/templates/err/js404
+share/templates/layout/footer.tt
+share/templates/layout/header.tt
+share/templates/layout/main.tt
+share/templates/layout/nav_bar.tt
+share/templates/layout/raw.tt
+share/templates/layout.tt
+share/templates/login.html
+share/templates/logout.html
+share/templates/prefs/checkpasswd.html
+share/templates/prefs/passwd.html
+share/templates/prefs/promptpasswd.html
 

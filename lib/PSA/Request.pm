@@ -96,7 +96,9 @@ our $schema =
      fields =>
      {
       string => { sid => { sql => "CHAR(32)" },
-		  uri => { sql => "VARCHAR(255)" },
+		  uri => { sql => "VARCHAR(255)",
+			   check_func => sub { },
+			 },
 		},
       dmdatetime => {
 		     received => { init_default => sub {

@@ -67,12 +67,12 @@ sub lynx {
 
 =head1 NAME
 
-Test::Builder - Backend for building test libraries
+PSA::Test::Builder - Backend for building test libraries
 
 =head1 SYNOPSIS
 
   package My::Test::Module;
-  use Test::Builder;
+  use PSA::Test::Builder;
   require Exporter;
   @ISA = qw(Exporter);
   @EXPORT = qw(ok);
@@ -106,6 +106,9 @@ Test::Simple and Test::More have proven to be popular testing modules,
 but they're not always flexible enough.  Test::Builder provides the a
 building block upon which to write your own test libraries I<which can
 work together>.
+
+And the block was found to be rotten, and so PSA::Test::Builder was
+constructed.
 
 =head2 Construction
 
@@ -1489,6 +1492,10 @@ This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 See F<http://www.perl.com/perl/misc/Artistic.html>
+
+Minorly modified here and there to not make drastic assumptions about
+how it is used, and therefore work outside of its designed environment
+by Sam Vilain E<lt>samv@cpan.orgE<gt>
 
 =cut
 

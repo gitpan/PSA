@@ -17,15 +17,18 @@ PSA::Heap - a per-session dump for data
 =head1 DESCRIPTION
 
 The PSA::Heap module encapsulates a `Heap' concept - analagous to a
-session.  This is distinct from the PSA::Session class, in that that
-class is actually a real object in a Tangram store - the PSA::Heap
-class assumes that you are storing the sessions locally on the
-application servers (and hence, that session affinity is working
+session.  This is distinct from the L<PSA::Session> class, in that
+that class is actually a real object in a Tangram store - the
+PSA::Heap class assumes that you are storing the sessions locally on
+the application servers (and hence, that session affinity is working
 correctly).
 
-Apache::Session::File is used for the serialisation.
+L<Apache::Session::File> is used for the serialisation.  This could be
+changed to other techniques, especially since L<Apache::Session> is so
+crap, like L<Apache::Session::DB>.  But trust me, you are better off
+using L<PSA::Session>.
 
-There are drawbacks to this approach, as compared to PSA::Session:
+There are drawbacks to this approach, as compared to L<PSA::Session>;
 
 =over
 
@@ -37,15 +40,16 @@ the heap or in the PSA::Session.
 =item *
 
 Business objects mistakenly placed in the heap may end up trying to
-serialise the entire database.
+serialise the entire database.  This is automatically avoided with
+PSA::Session.
 
 =back
 
 However, both of these problems can be worked around; by serialising
-the session with Data::Dumper, but replacing any business objects (ie,
-those found with a storage ID) with a blessed scalar ref to the object
-ID or something like that.  This serialisation can be stored as part
-of the PSA::Session if using DB-only sessions.
+the session with L<Data::Dumper>, but replacing any business objects
+(ie, those found with a storage ID) with a blessed scalar ref to the
+object ID or something like that.  This serialisation can be stored as
+part of the PSA::Session if using DB-only sessions.
 
 =cut
 

@@ -10,50 +10,32 @@ PSA.pm - Perl Server Applications
 
 =head1 SYNOPSIS
 
- use PSA qw(Cache Request::CGI Response::HTTP);
+See L<PSA::Intro> for a quick introduction to PSA, from an application
+developer's and system administrator's viewpoint.
 
- # See the man pages for PSA::Cache and T2::Storage for more
- my $cache = PSA::Cache->new( base_dir => "../psa-bin" );
- my $storage = T2::Storage->open( "myapp" );
+See L<bin/psa> for information on how to start PSA applications with
+the command-line C<psa> utility.
 
- my $acceptor = PSA::Acceptor::AutoCGI->new();
-
- while ( my $request = $acceptor->get_request() ) {
-
-     my $psa = PSA->new
-         (
-          request => $request,
-          response => PSA::Response::HTTP->new(),
-
-          # your persistent PSA::Cache object for cached code
-          cache => $cache,
-          # your application's Tangram storage backend
-          storage => $storage,
-         );
-
-     # If your sessions are in your Tangram storage
-     $psa->set_session
-         ( PSA::Session->fetch($storage, $psa->sid) );
-
-     # Process the request
-     $psa->run("whassap.pl");
-
- }
-
- $storage->disconnect();
+See L<PSA::All> for information on starting arbitrary PSA applications
+on system startup, and monitoring their use via a system such as
+Nagios.
 
 =head1 DESCRIPTION
 
 Perl Server Applications are a fast and scalable solution to dynamic
 page generation and general purpose application servers.
 
-A PSA object represents a request processor; instances of it may be
+A C<PSA> object represents a request processor; instances of are
 created for individual requests.  It has methods of accepting requests
-(PSA::Acceptor::XXX objects), that emit request objects
-(PSA::Request::XXX).  PSA pages, like small CGI fragments (but as fast
-as code cached by mod_perl et al) extract information from the
-request, do whatever they need to do with storage and then respond
-with some form of PSA::Response::XXX object.
+(L<PSA::Acceptor>-derived objects), that emit request objects
+(L<PSA::Request>-derived objects).  PSA pages, like small CGI extract
+information from the request, do whatever they need to do with
+storage, commit and then respond by passing some form of a
+L<PSA::Response> object (possibly mutating it to a
+L<PSA::Response::Template>).
+
+Systems like ASP use global variables to represent some of the objects
+that are properties of the C<PSA> object.
 
 There are many other parts of the PSA object that come into play, see
 below for details.
@@ -71,21 +53,24 @@ people will be interested in L<PSA::Request::CGI>.
 
 =item response
 
-a PSA::Response derived object.  See L<PSA::Request>, though most
-people will be interested in L<PSA::Request::HTTP>.
+a PSA::Response derived object.  See L<PSA::Response>, though most
+people will be interested in L<PSA::Response::HTTP>.
 
 =item session
 
-database-held, schema driven session data.  See L<PSA::Session>
-
-=item heap
-
-session-file or database-held, free form session data.
+database-held, schema driven session data.  See L<PSA::Session>.
 
 =item heap_obj
 
-Object behind heap (may or may not bear some relation to
+object behind heap (may or may not bear some relation to
 C<tied($psa-E<gt>heap)>, if set).  See L<PSA::Heap>.
+
+=item heap
+
+session-file or database-held, free form session data.  This is always
+an application scratchpad, available no matter whether ACID sessions
+(see L<PSA::Session>) or locking-style sessions (see L<PSA::Heap>) are
+in use.
 
 =item cache
 
@@ -102,7 +87,8 @@ for more.
 =item storage
 
 The Tangram::Storage (or, perhaps, T2::Storage) object(s) for the
-application(s) currently housed by this PSA instance.
+application(s) currently housed by this PSA instance.  See
+L<Tangram::Storage> and/or L<T2::Storage>.
 
 =item sid
 
@@ -124,14 +110,11 @@ Application has served.
 =cut
 
 use base qw(Class::Tangram);
-
-use T2::Schema;
-use Tangram;
-
 use vars qw($schema $VERSION);
 
-$VERSION = "0.20_02";
+$VERSION = "0.49_01";
 
+# for user-space threading, a thread number
 our $thread = 0;
 
 $schema =
@@ -170,6 +153,7 @@ $schema =
 		 threadnum => { init_default => 0 },
 		},
 		ref => {
+			# these class settings are comments, really
 			config   => { class => "PSA::Config" },
 			cache    => { class => "PSA::Cache" },
 
@@ -184,7 +168,8 @@ $schema =
 			schema   => { class => "T2::Schema" },
 			# lexicon?
 		       },
-		# additional data stores, per site
+
+		# additional data stores, per site.
 		hash => {
 			 stores  => { class => "Tangram::Storage" },
 			 schemas => { class => "T2::Schema" },
@@ -194,7 +179,7 @@ $schema =
 
 our $DEBUG = 0;
 sub _say {
-    print STDERR __PACKAGE__.": @_\n";
+    print STDERR __PACKAGE__.": @_\n" if $DEBUG;
 }
 
 =head1 IMPORTER ARGUMENTS
@@ -203,6 +188,12 @@ By specifying a list of partial modules to load, make the code look
 tidier;
 
   use PSA qw(Acceptor::AutoCGI Request::CGI Response::HTTP);
+
+or, if using C<PSA::Init>:
+
+  use PSA qw(Init);
+
+this will load config and other things.
 
 =cut
 
@@ -295,7 +286,6 @@ is passed to the copy constructor.
 
 sub spawn {
     my $self = shift;
-    #kill 2, $$;
     my $copy = $self->new(heap => {%{$self->heap}}, run_depth => 0, @_);
 
     push @{ $self->run_queue }, [ $copy, $copy->entry_point||"whassap" ];
@@ -370,7 +360,7 @@ sub _post_on_done {
 	\@_;
 }
 
-=item closure("page.psa", [@args])
+=item B<$psa-E<gt>closure("page.psa", [@args])>
 
 Returns an anonymous subroutine to "page.psa" compiled into a sub.
 
@@ -401,9 +391,10 @@ sub closure {
     return sub { $psa->run($filename,@args,@_) }
 }
 
-=head2 get_session
+=head2 B<$psa-E<gt>get_session>
 
-Returns the PSA::Session object for this PSA instance.
+Returns the PSA::Session object for this PSA instance.  Automatically
+connects the session if no Heap/Session is open, so be careful :)
 
 =cut
 
@@ -417,12 +408,14 @@ sub get_session {
     } elsif ($self->heap_open) {
 	return undef;
     } else {
-	$self->attach_session();
-	return $self->SUPER::get_session();
+	$self->attach_session(shift);
+	my $x = $self->SUPER::get_session();
+	#print STDERR "Returning: $x\n";
+	return $x;
     }
 }
 
-=head2 sid
+=head2 B<$psa-E<gt>sid>
 
 Returns the session ID as a string.  The SID of the Session/Heap takes
 priority over any SID received in the input request (they should be
@@ -469,7 +462,7 @@ sub set_sid {
     }
 }
 
-=head2 storage([ $site ])
+=head2 B<$psa-E<gt>storage([ $site ])>
 
 Returns the currently primary Tangram::Storage object, or the one for
 the named site if given.
@@ -513,7 +506,7 @@ sub storage {
     return $self->get_storage(@_);
 }
 
-=head2 schema([ $site ])
+=head2 B<$psa-E<gt>schema([ $site ])>
 
 Returns the currently active T2::Schema object for the currently
 running PSA site.  Note that this is a `T2::Schema' object, not a
@@ -557,9 +550,10 @@ sub schema {
     return $self->get_schema(@_);
 }
 
-=head2 uri(...)
+=head2 B<$psa-E<gt>uri(...)>
 
-Returns a URI to the next page.  See PSA::Request->uri
+Returns a URI to the next page.  Delegated to PSA::Request->uri, but
+this is the primary method called by the default templates.
 
 =cut
 
@@ -568,10 +562,12 @@ sub uri {
     return $self->get_request->uri(@_);
 }
 
-=head2 filename($pkgspace)
+=head2 B<$psa-E<gt>filename($pkgspace)>
 
 Returns the PSA filename associated with the Perl package space
 $pkgspace (as probably returned by a function like B<caller()>.
+
+This is a PSA::Cache reverse lookup!
 
 =cut
 
@@ -582,12 +578,16 @@ sub filename {
     return $self->get_cache->filename($pkg);
 }
 
-=head2 $psa->docroot_ok($filename)
+=head2 B<$psa-E<gt>docroot_ok($filename)>
 
 Returns the local relative or absolute path to the passed relative
 docroot location.
 
 Should only return a path if the file is found to exist.
+
+This function is used by the default/fallback templates that serve
+static content (sometimes handled by PSA applications in the interest
+of configuration flexibility).
 
 =cut
 
@@ -595,7 +595,7 @@ sub docroot_ok {
     my $self = shift;
     my $filename = shift;
 
-    # Hardcoded sanity - don't let them see temp files or backups
+    # Hardcoded (in)sanity - don't let them see temp files or backups
     return undef if ( $filename =~ m{ (   \.(old|orig|bak|rej|tmp)
 				      |   ~          # emacs backups
 				      |   (^|/)CVS(/.+)?  # CVS dirs
@@ -612,30 +612,55 @@ sub docroot_ok {
 
     # check file exists and return
     return ( -f $filename && -r _ ) ? $filename : undef;
-
 }
 
-=head2 $psa->attach_session
+=head2 B<$psa-E<gt>attach_session>
 
 Starts the session via PSA::Session (database-side sessions).
+
+If the C<$psa-E<gt>config> property is correctly configured, the class
+of the Session can be overridden with the following F<etc/psa.yml>
+fragment:
+
+ classes:
+   session: Your::Session
 
 =cut
 
 sub attach_session {
     my $self = shift;
-    my $session = shift;
-    $self->detach_heap if $session;
+    my $inv = (shift) || $self->class("session");
+    $self->detach_heap if ref($inv) and $self->heap_open;
 
     return if $self->heap_open;
-    $self->set_heap_obj($session ||=
-			PSA::Session->fetch($self->storage, $self->sid));
+    my $session = ref($inv) ? $inv : undef;
+    _say "ATTACHING ".($session?"":"(NEW) ")."SESSION";
+
+    $self->set_session($session ||=
+                       $inv->fetch($self->storage, $self->sid));
+
     $self->set_sid($session->get_sid);
     $self->set_heap($session->get_data);
     $self->set_heap_open(1);
 }
 
 
-=head2 $psa->attach_heap
+our %dc = ( session => "PSA::Session" );
+sub class {
+    my $self = shift;
+    my $type = shift;
+
+    my $sc;
+    if ( my $cfg = $self->get_config ) {
+	if ( my $cl = $cfg->{classes} ) {
+	    $sc = $cl->{$type};
+	}
+    }
+
+    return $sc || $dc{$type};
+}
+
+=head2 B<$psa-E<gt>attach_heap>
 
 Starts the session via PSA::Heap (middleware sessions).
 
@@ -650,7 +675,7 @@ sub attach_heap {
     $self->set_heap_open(1);
 }
 
-=head2 $psa->detach_heap
+=head2 B<$psa-E<gt>detach_heap>
 
 Saves the session via PSA::Heap.
 
@@ -660,11 +685,11 @@ sub detach_heap {
     my $self = shift;
 
     return unless $self->heap_open;
-    if ($self->heap_obj->isa("PSA::Session")) {
-	$self->storage->update($self->heap_obj);
-	$self->set_heap(undef);
-    } else {
+    if ($self->heap_obj) {
 	$self->heap_obj->flush();
+    } else {
+	$self->storage->update($self->get_session);
+	$self->set_heap(undef);
     }
     $self->set_heap_open(0);
     $self->set_heap_obj(undef);
@@ -675,7 +700,7 @@ sub detach_session {
     return $self->detach_heap(@_);
 }
 
-=head2 $psa->rollback_heap
+=head2 E<$psa-E<gt>rollback_heap>
 
 Forgets all of the changes to the heap and restores it to the way it
 was the last time it was read, or written.  ie, it's fetched again.
@@ -692,9 +717,7 @@ sub rollback_heap {
 
 	# we don't need to ROLLBACK; we can just re-load from the
 	# consistent read snapshot.
-	$self->set_heap_obj(undef);
-	$self->set_heap(undef);
-
+	$self->abort_session;
 	$self->attach_session;
 
     } else {
@@ -708,9 +731,22 @@ sub rollback_session {
     return $self->rollback_heap(@_);
 }
 
-=head2 $psa->commit_heap
+sub abort_session {
+    my $self = shift;
+    my $session = $self->get_session;
 
-Saves the session, but keeps its data available
+    $self->set_session(undef);
+    $self->set_heap(undef);
+    $self->set_heap_open(undef);
+
+    $self->storage->unload($session);
+    $session->clear_refs;
+}
+
+=head2 B<$psa-E<gt>commit_heap>
+
+Saves the session, but keeps its data available.  The session is from
+that point on, read-only.
 
 =cut
 
@@ -719,12 +755,13 @@ sub commit_heap {
     my $skip_storage = shift;
     return unless $self->heap_open;
 
-    if ($self->heap_obj->isa("PSA::Session")) {
+    if ($self->get_heap_obj) {
 
-	$self->storage->update($self->heap_obj);
+	$self->heap_obj->commit($skip_storage ? () : $self->storage);
 
     } else {
-	$self->heap_obj->commit($skip_storage ? () : $self->storage);
+
+	$self->storage->update($self->get_session);
     }
 
     $self->set_heap_open(0);
@@ -736,7 +773,7 @@ sub commit_session {
 }
 
 
-Class::Tangram::import_schema("PSA");
+Class::Tangram::import_schema(__PACKAGE__);
 
 42;
 

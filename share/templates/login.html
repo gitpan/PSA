@@ -1,0 +1,32 @@
+<% title = "Login" %>
+
+<% PROCESS err/contacts.tt %>
+
+<% errors = { "default" = "h1/loginfailed",
+              "EACCESS"  = "h1/authorisation",
+              "EOLDSESSION"  = "h1/timeout",
+	      } %>
+
+<% body = BLOCK %>
+
+<% IF error %>
+<% eimg = errors.$err || errors.default %>
+<h1><% INCLUDE lib/img.tt pic= eimg %></h1>
+
+<p class="error"><% error %></p>
+<% ELSE %>
+<h2><% INCLUDE lib/img.tt pic="h1/login" %></h2>
+
+<p class="error">&nbsp;</p>
+<% END %>
+
+<% IF q.u and !q.ssl %>
+  <% https = -1 %>
+<% END %>
+<% IF q.next %>
+  <% next = q.next %>
+<% END %>
+
+<% INCLUDE el/login.tt style="main" u = q.u %>
+
+<% END %>

@@ -1,0 +1,19 @@
+<% DEFAULT
+	floating = "(no floating text defined in " _ url _ ")"
+	body = "(no body defined in " _ url _ ")"
+%>
+<% INCLUDE layout/header.tt %>
+
+<% UNLESS no_nav %>
+  <% INCLUDE layout/nav_bar.tt %>
+<% END %>
+
+<div class="floating">
+  <% floating %>
+</div>
+
+<div class="body">
+  <% body %>
+</div>
+
+<% INCLUDE layout/footer.tt %>

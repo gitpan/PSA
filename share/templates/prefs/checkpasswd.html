@@ -1,0 +1,43 @@
+<% DEFAULT
+   success = 0
+%>
+
+<% title = "Password Change Complete" %>
+
+<% extra_stylesheets = [ "activate" ] %>
+
+<% floating = BLOCK %>
+
+  <p>For best security, choose a password that is hard to guess but
+    easy for you to remember.
+
+<% UNLESS user.regpassword %>
+  <% INCLUDE el/back.tt back = "/briefcase.pl" %>
+<% END %>
+
+<% END %>
+
+<% body = BLOCK %>
+
+<% IF success %><% pic = "h1/passwdok" %><% ELSIF error == "mismatch" %><% pic = "h1/passwdbad" %><% ELSE %><% pic = "h1/passwdchbad" %><% END %>
+  <h1><% INCLUDE lib/img.tt %></h1>
+
+<% IF success %>
+  <p>Your password change was successful.  Please proceed !
+<p><% INCLUDE lib/img.tt pic = "b/cont" img.link = "/briefcase.pl" img.id="cont"%><% img.link = ""  img.id = "" %>
+
+<% ELSE %>
+
+  <p><% IF error == "mismatch" %>Your passwords didn't match.<% ELSE %>The current password you entered was incorrect.<% END %>
+
+  <% IF user.regpassword %>
+  Please try again.
+  <% END %>
+    <p><% INCLUDE lib/img.tt pic = "b/tryagain" img.link = "/prefs/passwd.pl" img.id="cont" %><% img.link = "" img.id = "" %>
+<% END %>
+
+<script language="javascript" type="text/javascript"><!--
+   document.getElementById("cont").parentNode.focus();
+--></script>
+
+<% END %>

@@ -1,7 +1,15 @@
 #!/usr/bin/perl -w
 
+# this script basically tests that the PSA::Request::CGI returns the
+# correct URI for subsequent links based on information supplied in
+# the CGI environment.  There are lots of test because the CGI
+# specification is a mess and implemented inconsistently across web
+# servers.
+
+# these tests include tests from Apache 1.3, LiteSpeed and lighttpd.
+
 use strict;
-use Test::More tests => 60;
+use Test::More tests => 68;
 use Data::Dumper;
 
 #BEGIN { ( -d "lib" ) || chdir ("..");
@@ -9,7 +17,7 @@ use Data::Dumper;
 #use lib "lib";
 use lib "../lib";
 
-use_ok 'PSA::Request::CGI';
+BEGIN { use_ok 'PSA::Request::CGI' };
 
 # Emulate a CGI request
 my %new_env = (
@@ -50,6 +58,9 @@ my $env = {
 
 # tests without cookies
 $request = PSA::Request::CGI->fetch(env => {%$env});
+
+is($request->uri, "http://arse.com/cgi-bin/arse.cgi/12345678123456781234567812345678/foo.pl?baz=new&baz=new",
+   "check that the uri was set correctly");
 
 is($request->uri("cheese.pl"), "../cheese.pl?SID=$sid",
    "Rel. URI gen. w/o cookie");
@@ -233,6 +244,7 @@ is ($request->uri( flat => "/images/foo.png" ),
     "flat + relative (root) [leading /]");
 
 $env->{PATH_INFO} = "/foobar/dumpenv.pl";
+$env->{REQUEST_URI} = "/foobar/dumpenv.pl";
 $request = PSA::Request::CGI->fetch(env => $env);
 is ($request->uri( absolute => 'self' ),
     "http://psatest/foobar/dumpenv.pl",
@@ -245,11 +257,13 @@ is ($request->uri( absolute => flat => "/images/foo.png" ),
     "http://psatest/images/foo.png",
     "flat + absolute (offset from root) [leading /]");
 
+is($request->uri, "http://psatest:80/foobar/dumpenv.pl",
+   "uri got set correctly");
 is ($request->uri( flat => "images/foo.png" ),
-    "../images/foo.png",
+    "/images/foo.png",
     "flat + relative (offset from root)");
 is ($request->uri( flat => "/images/foo.png" ),
-    "../images/foo.png",
+    "/images/foo.png",
     "flat + relative (offset from root) [leading /]");
 
 
@@ -307,6 +321,7 @@ is ($request->uri( post => absolute => 'self' ),
 is ($request->uri( post => 'self' ),
     "dumpenv.pl",
     "(no PATH_INFO) post => self");
+is($request->filename, "", "(no PATH_INFO) - filename");
 
 #---------------------------------------------------------------------
 #  Ugh.  Look at these two requests.  They were obtained via the same
@@ -387,11 +402,11 @@ $env = Load <<'YAML';
   PATH_INFO: '/ab63bbb427afff99a2f37c0bfacb658a/login.pl'
   PATH_TRANSLATED: |-
     /mv/app/dev/bnz/html/ab63bbb427afff99a2f37c0bfacb658a/login.pl
-  QUERY_STRING: 'foo=bar&baz=frop'
+  QUERY_STRING: 'foo=bar&baz=frop&foo=baz&foo=bar'
   REMOTE_ADDR: 192.168.1.30
   REMOTE_PORT: 36484
   REQUEST_METHOD: GET
-  REQUEST_URI: '/fozzie/ab63bbb427afff99a2f37c0bfacb658a/login.pl'
+  REQUEST_URI: '/fozzie/ab63bbb427afff99a2f37c0bfacb658a/login.pl?foo=bar&baz=frop&foo=baz&foo=bar'
   SCRIPT_FILENAME: '/mv/app/dev/bnz/html/fozzie'
   SCRIPT_NAME: '/fozzie'
   SCRIPT_URI: ! >-
@@ -421,7 +436,58 @@ is ($request->uri( post => 'self' ),
 #BUG - uris are now getting query strings appended!
 
 is ($request->uri( flat => '/some/file' ),
-    "../../some/file",
+    "/some/file",
     "(no PATH_INFO III) flat");
 
+is_deeply (scalar($request->get_param()),
+	   {foo => [ qw(bar baz bar) ],
+	    baz => "frop"}, "correctly parsed multiple value arguments");
+
+is_deeply ([$request->param("foo")], ["bar", "baz", "bar"],
+	   "Multiple value arguments returned correctly (list ctx)");
+
+is_deeply (scalar($request->param("foo")), "bar",
+	   "unlike CGI.pm, scalar param('value') doesn't return arrays");
+
+$request = 
+    ( bless
+      {
+       'sid' => undef,
+       'remote_addr' => '192.168.1.30',
+       'server_software' => 'LiteSpeed',
+       'cgi_version' => '1.1',
+       'http_referer' => 'http://bnz-dev.private.marketview.co.nz/products/customer.pl',
+       'param' => {},
+       'received' => '2004102210:49:09',
+       'server_port' => '80',
+       'base' => '/',
+       'cookies' => {},
+       'query_string' => '',
+       'env' => {
+		 'HTTP_ACCEPT_ENCODING' => 'gzip,deflate',
+		 'HTTP_CONNECTION' => 'keep-alive',
+		 'HTTP_ACCEPT' => 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,video/x-mng,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1',
+		 'HTTP_ACCEPT_LANG' => 'en-us,en;q=0.5',
+		 'SCRIPT_FILENAME' => '/mv/www/dev/bnz/docs/products/customer.pl',
+		 'HTTP_ACCEPT_CHARSET' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+		 'HTTP_USER_AGENT' => 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.6) Gecko/20040614 Firefox/0.8',
+		 'REMOTE_PORT' => '32957',
+		 'FCGI_ROLE' => 'RESPONDER',
+		 'HTTP_KEEPALIVE' => '300',
+		 'HTTP_CACHE_CTRL' => 'max-age=0',
+		 'REQUEST_URI' => '/products/customer.pl',
+		 'DOCUMENT_ROOT' => '/mv/www/dev/bnz/docs/',
+		 'HTTP_HOST' => 'bnz-dev.private.marketview.co.nz'
+		},
+       'request_method' => 'GET',
+       'gateway_interface' => 'CGI/1.1',
+       'uri' => bless( do{\(my $o = 'HTTP://bnz-dev.private.marketview.co.nz:80/products/customer.pl')}, 'URI::http' ),
+       'script_name' => '/products/customer.pl',
+       'fh' => \*::STDIN,
+       'server_protocol' => 'HTTP/1.1',
+       'server_name' => 'bnz-dev.private.marketview.co.nz'
+      }, 'PSA::Request::CGI' );
+
+is($request->uri( "/products/" ), "./", "same dir");
+is($request->uri( "/products/?back=true" ), "./?back=true", "query frag");
 

@@ -1,9 +1,8 @@
 #!/usr/bin/perl -w
 #
-# This file is the handler for incoming requests.  You should
-# configure your web server to run this script when requests are
-# received for this site - an example of how to do this for Apache is
-# in the .htaccess file.
+# This file is the handler for incoming requests.
+#
+# This generic wrapper will eventually be replaced by the `psa' script
 #
 
 use strict;

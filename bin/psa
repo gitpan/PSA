@@ -1,0 +1,205 @@
+#!/usr/bin/env perl -w
+
+use Scriptalicious
+    -name => "psa";
+
+use strict;
+use warnings;
+
+use PSA qw(Init);
+
+my %o = ( action => "start" );
+
+getopt("config|c=s" => \$o{config_file},
+       "daemon|d"   => \$o{daemonise},
+       "debug|D"    => \$o{debug},
+       "phase|p=s"  => \$o{phase},
+       "i|io=s"     => \$o{io},
+       "uid=i"      => sub { ($o{auth}||={})->{uid} = $_[1] },
+       "gid=i"      => sub { ($o{auth}||={})->{gid} = $_[1] },
+       "user|u=s"   => sub { ($o{auth}||={})->{user} = $_[1] },
+       "group|g=s"  => sub { ($o{auth}||={})->{group} = $_[1] },
+       #"no-monitor|n" => \$o{no_monitor},
+       #"reattach|R" => \$o{reattach},
+       "status|s"   => sub { $o{action} = "status" },
+       "kill|k"     => sub { $o{action} = "stop" },
+       "all|a"      => \$o{all},
+       #"module|m=S" => \@{$o{modules}},
+       #"module-config|M=S" => \@{$o{module_config}},
+      );
+
+PSA::Init::run(\%o, @ARGV);
+
+
+__END__
+
+=head1 NAME
+
+psa - PSA site runner
+
+=head1 SYNOPSIS
+
+ psa [options] [ -p PHASE ] [ -i SOCKET ] [ directory ]
+ psa -c etc/psa.yml
+
+=head1 DESCRIPTION
+
+This program starts and monitors a Perl Server Application.
+
+Reasonable defaults exist for almost everything, so if this script is
+run - be it via mod_perl, FastCGI, plain CGI or whatever - it will
+always respond with I<something> :)
+
+Unless daemon operation is asked for using the B<-d> switch, the
+program will remain `interactive'; which means either a full-screen
+curses based interface (the PSA `Console'), or a text-based `tail' of
+application access and events.
+
+=head1 COMMAND LINE OPTIONS
+
+=over
+
+=item B<-c, --config=FILENAME>
+
+Specify a configuration file.  Defaults to F<etc/psa.yml>.
+
+=item B<-d, --daemon>
+
+After setting up the application, daemonise (disassociate from the
+current terminal, become a new session leader, fork twice, etc).
+
+=item B<-D, --debug>
+
+Override all config-file specified logging action, and log all PSA
+events to standard error.  Also, disable the process manager and
+interactive monitor.
+
+=item B<-p, --phase=PHASE>
+
+Set the development phase, as defined in the config file.  This will
+normally change the database that is connected to, and possibly
+configure experimental features of the application.
+
+=item B<-i, --io=SOCKET>
+
+Specify the socket to communicate on.  For HTTP mode, this only really
+makes sense to be a hostname:port combination, but for FastCGI mode it
+can also be a UDS socket.
+
+This parameter can also be specified via the FCGI_SOCKET_PATH
+environment variable, which implies C<-P fastcgi>.
+
+Examples:
+
+=over
+
+=item -i C<hostname:8080>
+
+Listen on address `hostname' port 8080
+
+=item -i C<:8080>
+
+Listen on all interfaces port 8080
+
+=item -i C<filename>
+
+Listen on local Unix Domain socket F<filename>
+
+=back
+
+=item B<-P, --protocol=PROTO>
+
+Specify socket protocol.  Currently accepted values are C<FastCGI> and
+C<HTTP>.
+
+=item B<-u, --user=USER, --uid=UID>
+
+=item B<-g, --group=GROUP, --gid=GID>
+
+Switch to the specified user or user ID and/or group or group ID after
+acquiring the input socket (and before reading any user configuration
+or code).
+
+This option will not be honoured in the configuration file, unless the
+file and its parent directories are all `secure' (ie, owned by the
+superuser and not open permissions).
+
+This option is implicit if the B<psa> program is run as the
+super-user, and the permissions are `secure'.  The default user to run
+as is the owner of the configuration file and parent directories, but
+again such directories must be `secure'.  Specifying these options
+manually will bypass the directory permissions checks.
+
+Unless you specify the super-user with B<-u>, B<psa> will refuse to
+run as root.
+
+=item B<-k, --kill>
+
+Stops a running PSA application
+
+=item B<-a, --all>
+
+Looks at the master PSA configuration file for a list of sites, then
+starts/kills them all.
+
+=back
+
+=head1 TO-DO Features
+
+A heads-up display for the Perl Server application, curses/gtk based
+is vaguely planned.
+
+=over
+
+=item B<-n, --no-monitor>
+
+Disables the interactive PSA monitor, which is also the effect of not
+being connected to a fully featured terminal.
+
+In this mode, the configuration is printed once on standard output at
+startup, and accesses and INFO level messages and above are printed on
+standard output.
+
+=item B<-R, --reattach>
+
+Attach to the current PSA process monitor and display the interactive
+PSA monitor.
+
+=back
+
+=item B<-m, --module=MODULE>
+
+Loads the specified PSA module.
+
+Modules that ship with PSA include C<Pixie>, C<Tangram>, C<Heap>,
+C<Storage>, C<Console>, C<l4p>, C<Monitor>, C<Audit>, C<thread>.
+
+=item B<-M, --module-config=MODULE:param=VALUE>
+
+Set the C<param> configuration option for the MODULE loaded module to
+C<VALUE>.  Multiple C<param=value> pairs may be listed by separating
+them with colons.
+
+Examples (see individual module manual pages for more information):
+
+=over
+
+=item -MPM:maxproc=10:minfree=2:maxfree=5
+
+Configures the process manager to keep 2-5 free threads/processes, but
+never to exceed 10 active threads.
+
+=item -Ml4p:logger=FATAL,Screen
+
+Configures Log4perl to send all fatal messages to the screen
+
+=item -MTangram:dsn=dbi:Pg:dbname=bob
+
+Specify to use a Postgres store with the PSA::Tangram module, and to 
+
+=item
+
+=back
+
+=cut
+

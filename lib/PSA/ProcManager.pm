@@ -36,6 +36,7 @@ sub sig_manager {
     my $signal = shift;
 
     if ($signal eq "USR1") {
+	#FIXME - this doesn't work :)
 	my $dollar = $$;
 	if (my $pid = fork()) {
 	    $self->pm_notify("psa[$$]: USR1 received; starting "

@@ -27,9 +27,6 @@ package PSA::Session;
 
 use strict;
 
-use Tangram::DMDateTime;
-use Tangram::PerlDump;
-
 use CGI::Cookie;
 
 use Digest::MD5 qw(md5_hex);
@@ -62,7 +59,7 @@ our $schema = {
 	int => {
 	    # total count of page impressions, updated automatically
 	    # on a fetch()
-	    impressions => undef,
+	    impressions => { init_default => 1 },
 	},
 
 	dmdatetime => {
@@ -70,12 +67,32 @@ our $schema = {
 	    created => undef,
 
 	    # the last time this session object was accessed
-	    lastused => undef,
+	    lastused => { init_default => 0 },
 	},
 
-	transient => { is_new => undef },
+	transient => { is_new => undef,
+		       since => undef,
+		     },
     },
 };
+
+use Date::Manip qw(ParseDate DateCalc);
+
+sub hit {
+    my $self = shift;
+    $self->set_lastused;
+    $self->{impressions}++;
+}
+
+
+sub set_lastused {
+    my $self = shift;
+    my $val = ParseDate((shift) || "now");
+    if ( my $old = $self->get_lastused ) {
+	$self->set_since(DateCalc($old, $val));
+    }
+    return $self->SUPER::set_lastused($val);
+}
 
 =head1 CLASS METHODS
 
@@ -94,7 +111,8 @@ objects
 
 sub fetch {
     my ($class, $db, $sid, $no_update) = (@_);
-    $db->isa("Tangram::Storage") or croak "type mismatch";
+    $db or croak "no DB handle to put session in";
+    $db->isa("Tangram::Storage") or croak "DB handle not a valid storage";
 
     # see if any sessions have the sid they gave
     if ($sid and $sid =~ m/^[a-f0-9]{32}$/) {
@@ -117,7 +135,6 @@ sub fetch {
     # store it, so that `update' later is OK
     $db->insert($self);
 
-    bless $self, $class;
     return $self;
 
 }
@@ -134,7 +151,7 @@ sub create {
     # call the Class::Tangram initialiser
     my $self = $class->SUPER::new(@values);
 
-    $self->set_created( Date::Manip::ParseDate("now") );
+    $self->set_created( ParseDate("now") );
 
     # Assuming we get at least 16 bits of entropy out of each rand()
     # call, this should be OK.  Hopefully this should be more like 32

@@ -40,10 +40,14 @@ use constant STANDARD_CGI_HEADERS =>
        server_port request_method path_info path_translated
        script_name query_string remote_host remote_addr auth_type
        remote_user remote_ident content_type content_length
-       http_referer); # http_referer is not part of the CGI spec
+       http_referer request_uri);
+       # http_referer and request_uri are not part of the CGI spec but
+       # widely implemented.
 
 # note: memory size may be significantly larger than this before it is
 # tripped, so pick a size that is suitably small.
+
+# FIXME - this should be config'able
 our $POST_MAX = $ENV{CGI_POST_MAX} || 2 ** 14;   #16k
 our $UPLOAD_MAX = $ENV{CGI_POST_MAX} || 2 ** 20; #1M
 our $UPLOAD_DIR = $ENV{CGI_UPLOAD_DIR} || $ENV{TMP_DIR}
@@ -70,6 +74,8 @@ $schema =
 		# unparsed environment variables
 		env => { init_default => sub { return {%ENV} },
 		       },
+
+		headers => { init_default => { }, },
 
 		# The CGI cookies of this request
 		cookies => undef,
@@ -135,7 +141,7 @@ sub fetch($@) {
 
   # get the standard headers out and leave the rest behind
   $options{env} = { $options{env} ? %{$options{env}} : %ENV };
-  foreach ( STANDARD_CGI_HEADERS ) {
+  foreach ( STANDARD_CGI_HEADERS, "uri" ) {
       if ( exists $options{env}{uc($_)} ) {
 	  $options{$_} ||= delete $options{env}{uc($_)};
       }
@@ -153,10 +159,10 @@ sub init {
     my $self = shift;
 
     # perhaps PATH_INFO is not set, in which case, move it from SCRIPT_NAME
-    unless (defined $self->path_info) {
-	$self->set_path_info($self->script_name);
-	$self->set_script_name("/");
-    }
+    #unless (defined $self->path_info) {
+	#$self->set_path_info($self->script_name);
+	#$self->set_script_name("/");
+    #}
 
     # better be a CGI request
     ($self->{cgi_version}) =
@@ -166,17 +172,33 @@ sub init {
 	unless ($self->{cgi_version} and $self->{cgi_version} >= 1.1);
 
     # setup the `self' URI
+    goto BRACESSUCK if $self->get_uri;
     my $uri_self = URI->new();
-    (my $trimmed_protocol = $self->{server_protocol}) =~ s{/.*}{};
-    $uri_self->scheme($trimmed_protocol);
+
+    # detecting SSL has always been a PITA
+    my $scheme = scalar(getservbyport($self->{server_port}||80,"tcp"));
+    $scheme = "http" if (!$scheme or $scheme eq "www");
+    $uri_self->scheme($scheme);
+
     $uri_self->host($self->{server_name});
     $uri_self->port($self->{server_port});              # (URI.pm)++
-    my $pi = $self->{script_name}.($self->{path_info}||"");
-    $pi =~ s{^//+}{/};
-    $uri_self->path($pi);
-    $uri_self->query($self->{query_string}) if $self->{query_string};
+    if ( $self->{request_uri} ) {
+	my ($path, $query) =
+	    $self->{request_uri} =~ m{^([^?]*)(?:\?(.*))?$}
+		or die "didn't match; $self->{request_uri}";
+	$uri_self->path($path);
+	$query ||= $self->{query_string};
+	$uri_self->query($query) if $query and length($query);
+    } else {
+	my $pi = $self->{script_name}.($self->{path_info}||"");
+	$pi =~ s{^//+}{/};
+	$uri_self->path($pi);
+	$uri_self->query($self->{query_string}) if $self->{query_string};
+    }
+    #print STDERR "Setting SELF URI to $uri_self\n";
     $self->set_uri($uri_self);
 
+ BRACESSUCK:
     # cookies are an environment variable, so we can parse those
     # straight away.
     $self->_eat_cookies();
@@ -260,15 +282,45 @@ C<$request-E<gt>set_base()>) is removed.
 sub filename {
     my $self = shift;
 
-    # decide what session IDs look like
-    my $sid_re = $self->{sid_re} || $DEFAULT_SID_RE;
+    return $self->{_filename} ||= do {
 
-    my $path_info = $self->{path_info} or return "";
-    $path_info =~ s!/$sid_re|^/(?=/)!!ig;
-    $path_info =~ s!^$self->{base}!!
-	if $self->{base};
+	# decide what session IDs look like
+	my $sid_re = $self->{sid_re} || $DEFAULT_SID_RE;
 
-    return $path_info;
+	my $path_info = $self->path or return "";
+	if ( $self->{base} ) {
+	    $path_info =~ s!^/*$self->{base}!!
+		or warn("path of $path_info not within configured base"
+			."URL of $self->{base}!");
+	}
+	else {
+	    $path_info =~ s!^/*$self->{script_name}!!
+		or warn("path of $path_info not within detected script"
+			."path of $self->{script_name}!");
+	}
+
+	$path_info;
+    };
+}
+
+sub set_uri {
+    my $self = shift;
+    delete $self->{_filename};
+    delete $self->{_path};
+    return $self->SUPER::set_uri(@_);
+}
+
+# path, unlike uri->path, returns the translated path (ie, after
+# internal redirects), not the one in the request.
+sub path {
+    my $self = shift;
+    return $self->{_path} ||= do {
+	my $sid_re = $self->{sid_re} || $DEFAULT_SID_RE;
+	(my $path = ($self->script_name||"").($self->path_info||"") || $self->get_uri->path
+	) =~ s!/$sid_re|^/(?=/)|\?.*$!!ig;
+	$path =~ s{%([0-9a-f]{2})}{chr(hex($1))}gei;
+	$path;
+    };
 }
 
 sub is_post {
@@ -303,7 +355,7 @@ sub set_base {
     my $value = shift;
 
     # normalise //'s
-    $value =~ s{^/*(.*?)/*$}{/$1};
+    $value =~ s{^/*(.*?)/*$}{/$1} if $value;
 
     $self->SUPER::set_base($value);
 }
@@ -392,68 +444,86 @@ sub uri {
     }
 
     # build a uri for the hit they want
-    my $uri_next = $self->get_uri->clone();
-    $uri_next->query_form([]);
+    my $uri_next;
+
     # this is what will probably be different
     my ($path_info, $query_string);
 
     if ($options{flat}) {
 
-	my $path = $self->{script_name};
+	my $path;
 
-	# this sorta relies on the base being detected correctly.
-	$path = ($self->{base}||"")."/$options{call}";
+	# if no base URL is configured, then use the script name,
+	# chopping off the last path component if it exists.
+	unless ( $path = $self->{base} ) {
+	    ($path = $self->{script_name}) =~ s{/[^/]*$}{};
+	}
+	$uri_next = $self->get_uri->clone();
+	$uri_next->query_form([]);
+
+	$path .= "/$options{call}";
 
 	$path =~ s{^/*}{/};
 	$uri_next->path($path);
 
     } else {
-	# get the filename of this request without the SID
-	$path_info = ($self->filename() || "");
 
-	$path_info =~ s{^([^/])}{/$1};
+	# get the filename of this request without the SID
+	$uri_next = $self->get_uri->clone();
+	$uri_next->query_form([]);
+	$uri_next->path($self->filename);
+
 	if ($options{call}) {
-	    if ($options{call} =~ m{^/}) {
-		$path_info = $options{call};
-	    } else {
-		# set the page they want, otherwise point to self
-		$path_info =~ s{^(.*?)(/[^/]*)?$}{$1/$options{call}}
-	    }
+	    $uri_next = URI->new_abs($options{call}, $uri_next);
 	}
 
-	# did we get a SID cookie?
-	my $got_sid_cookie = ($self->{cookie_sid} and
-			      $self->{cookie_sid} eq $self->{sid});
-
-	unless ( $options{nosid} or !$self->{sid} ) {
+	unless ( $options{nosid} or !$self->{sid}
+		 or ($uri_next->host ne $self->get_uri->host)
+	       ) {
 	    if ( $options{post} ) {
-		$path_info =~ s{/|^}{/$self->{sid}$&}
-		    unless $got_sid_cookie;
+		$uri_next->path("/".$self->{sid}. $uri_next->path)
+		    unless $self->got_sid_cookie;
 	    } else {
 		$query_string = "SID=$self->{sid}"
-		    unless $got_sid_cookie;
+		    unless $self->got_sid_cookie;
 
-		if ( $options{query} ) {
-		    $query_string = ($query_string ? "$query_string&" : "");
-		}
 	    }
 	}
 
-	# set the path and query string for the next uri
-	my $pi = $self->{script_name}.($self->{path_info}||"");
-	($pi = ($self->{base}||"").$self->{script_name}.$path_info) =~ s{//+}{/}g;
-	$pi =~ s{^$self->{base}$self->{base}}{$self->{base}};
-	$uri_next->path($pi);
-	$uri_next->query($query_string);
+	my $base = $self->{base}||$self->{script_name};
+	if ( $base && $base ne "/" ) {
+	    $uri_next->path(($self->{base}||$self->{script_name})
+			    .$uri_next->path);
+	}
+
+	$query_string = join("&", grep { defined }
+			     $query_string,
+			     $uri_next->query,
+			     ($options{query} ? "" : ()) );
+
+	$uri_next->query($query_string)
+	    if $options{query} || $query_string;
 
     }
 
+    my $rv;
     # now, which uri do they want?
     if ( $options{absolute} ) {
-	return $uri_next->canonical();
+	$rv =  $uri_next->canonical();
     } else {
-	return $uri_next->rel($self->get_uri);   # (URI.pm)++
+	$rv =  $uri_next->rel($self->get_uri);   # (URI.pm)++
+	if ( $rv =~ m/^\.\./ ) {
+	    my $rv2 = $uri_next->path_query;
+	    if ( length($rv2) < length($rv) ) {
+		$rv = $rv2;
+	    }
+	}
     }
+    #print STDERR ("\033[34m;URI: "
+		  #.YAML::Dump(\%options)
+		  #."   self: ".($self->get_uri)."\n"
+		  #."   next: ".($uri_next)."\033[0m\n");
+    return $rv;
 }
 
 sub referer {
@@ -587,8 +657,8 @@ sub _add_param {
     my $key = shift;
     my $value = shift;
     if ( exists $bucket->{$key} ) {
-	$bucket->{key} = [$bucket->{$key}] unless ref $bucket->{$key};
-	push @{$bucket->{key}}, $value;
+	$bucket->{$key} = [$bucket->{$key}] unless ref $bucket->{$key};
+	push @{$bucket->{$key}}, $value;
     } else {
 	$bucket->{$key} = $value;
     }
@@ -629,6 +699,13 @@ sub _parse_form {
 	warn "Non-RFC2616 compliant HTTP method `"
 	    .$self->request_method."' (uri = ".$self->uri.")";
     }
+}
+
+sub got_sid_cookie {
+    my $self = shift;
+    return ($self->get_cookie_sid and
+	    ($self->get_cookie_sid eq $self->get_sid));
+
 }
 
 # parse and set up cookie information from HTTP_COOKIES env. var
@@ -839,6 +916,13 @@ sub link {
     return $handle;
 }
 
+sub get_path_info {
+    my $self = shift;
+    my $pi = $self->SUPER::get_path_info;
+    #print STDERR "Returning $pi for path_info, base is ".$self->base."\n";
+    $pi;
+}
+
 "nyarlethotep";
 
 __END__
@@ -988,9 +1072,9 @@ officially part of the CGI spec, but it is usually set.
 
 =back
 
-=head1 AUTHOR
+=head1 SEE ALSO
 
-Sam Vilain, <perl@snowcra.sh>
+L<PSA>, L<PSA::Acceptor::AutoCGI>
 
 =cut
 

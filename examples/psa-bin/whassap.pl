@@ -23,9 +23,9 @@ my ($result, $eperm);
 # PSA::Request::CGI
 my $filename = $psa->request->filename();
 
-use CGI::Cookie;
+print STDERR "filename is $filename\n";
 
-# FIXME - what happens if they request "../../../../etc/passwd"?
+use CGI::Cookie;
 
 # eval block to catch errors, etc
 eval {

@@ -1,0 +1,2 @@
+alert("No such JS file: <% page %>\n"
+	+"Referer: <% psa.request.referer %>");

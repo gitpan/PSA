@@ -1,0 +1,30 @@
+<% DEFAULT
+      title = url
+      stylesheets = [ "site" ]
+      extra_stylesheets = [ ]
+      js = [ ]
+%><?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="generator" content="GNU Emacs, Perl and Template Toolkit" />
+<% FOR x = stylesheets.merge(extra_stylesheets) %>
+<% path = "styles/" _ x _ ".css" %>
+    <link rel="stylesheet" href="<% uri('flat', path) %>" />
+<% END %>
+<% FOR script = js %>
+<% path = "js/" _ script %>
+    <script language="JavaScript" type="text/JavaScript" src="<% uri('flat', path) %>"></script>
+<% END %>
+    <title><% IF title.match("\S") %> - <% title %><% END %></title>
+<% FOR x = meta.keys.sort %>
+    <meta name="<% x %>" value="<% meta.$x | html %>" />
+<% END %>
+  </head>
+<body<% IF onload %> onload="<% onload %>"<% END %>>
+<% IF selfpost %>
+  <form id="selfpost" action="<% uri('post', 'self') %>" method="GET"></form>
+<% END %>

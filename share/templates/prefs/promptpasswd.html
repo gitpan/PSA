@@ -1,0 +1,45 @@
+<% DEFAULT
+   pass = "Chee37ate"
+%>
+
+<% title = "Confirm new password" %>
+
+<% extra_stylesheets = [ "activate" ] %>
+
+<% floating = BLOCK %>
+
+  <p>For best security, choose a password that is hard to guess but
+    easy for you to remember.
+
+<% UNLESS user.regpassword %>
+  <% INCLUDE el/back.tt back = "/briefcase.pl" %>
+<% END %>
+
+<% END %>
+
+<% body = BLOCK %>
+
+  <h1><% INCLUDE lib/img.tt pic = "h1/checkpasswd" %></h1>
+
+<% USE html %>
+  <form method="POST" action="<% uri('self') %>" >
+    <input type="hidden" name="pass" value="<% pass | html %>" />
+
+    <p>Please confirm the <b>new</b> password by re-entering it below:
+
+    <p><input id="confirm" type="password" name="confirm" tabindex="1" />
+<script language="javascript" type="text/javascript"><!--
+   document.getElementById("confirm").focus();
+--></script>
+<% UNLESS user.regpassword %>
+
+    <p>For security please also enter in your <b>current</b> password below:
+
+    <p><input type="password" name="oldpasswd" tabindex="2"  />
+<% END %>
+    <p>
+      <input type="image" src="<% uri('flat', '/gr/buttons/continue.png') %>"  tabindex="3"/>
+    </p>
+  </form>
+
+<% END %>

@@ -1,6 +1,13 @@
 #!/usr/bin/perl -w
 
-use POE;
+BEGIN {
+    eval { require POE };
+    if ( $@ ) {
+	eval q{use Test::More skip_all => "POE not installed"};
+	exit;
+    }
+}
+
 use strict;
 
 eval "use POE::Session::PSA;";
@@ -20,4 +27,4 @@ my $psp = # Pretty Silly Processor ?  :-)
      entry_point => "t1/whassap.pl",
     );
 
-$poe_kernel->run();
+POE::Kernel->run();

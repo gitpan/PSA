@@ -3,6 +3,14 @@
 # this test tests both PSA and POE versions of `spawn', which are a
 # bit like POE's POE::Session::Create.
 
+BEGIN {
+    eval { require POE };
+    if ( $@ ) {
+	eval q{use Test::More skip_all => "POE not installed"};
+	exit;
+    }
+}
+
 use Test::More tests => 16;
 use PSA qw(Cache Heap);
 use POE qw(Session::PSA);

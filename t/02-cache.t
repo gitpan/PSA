@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+# this test tests the PSA::Cache.
+
 use Test::More tests => 26;
 
 use strict;

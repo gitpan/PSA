@@ -21,6 +21,9 @@ Note that this is not a "prison", so no use of "Safe" is automatic; if
 you supply a safe to the constructor it will be used, but if you don't
 there's nothing to stop the piece of code running amok.
 
+This was primarily intended for ePerl style PSA pages, that print
+their output to STDOUT (or, more accurately, the selected filehandle).
+
 Note: the Safe feature is not implemented yet.
 
 =cut

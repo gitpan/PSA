@@ -60,7 +60,7 @@ $ENV{PERL5LIB}   = join(":", map { m{^/}?$_:"../$_" } @INC);
 {
     my ($rc, @output)
 	= capture_err("/bin/sh", "-c",
-		      "cd examples && $^X index.cgi");
+		      "cd examples && $^X index.cgi 2>&1");
 
     is($rc, 0, "index.cgi returned true" );
     my $out = join "", @output;
@@ -75,7 +75,7 @@ $ENV{PERL5LIB}   = join(":", map { m{^/}?$_:"../$_" } @INC);
 
     my ($rc, @output)
 	= capture_err("/bin/sh", "-c",
-		      "cd examples && $^X index.cgi");
+		      "cd examples && $^X index.cgi 2>&1");
 
     is($rc, 0, "index.cgi returned true" );
     my $out = join "", @output;

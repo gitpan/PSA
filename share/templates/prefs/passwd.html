@@ -1,0 +1,98 @@
+<% DEFAULT
+   p = [
+      { type = "startword"
+        num = 4
+        word = "Cheese"
+	value = "Chee"     },
+      { type = "number"
+	value = "37"       },
+      { type = "endword"
+        num = 3
+        word = "Chocolate"
+        value = "ate"      },
+]
+   pass = "Chee37ate"
+%>
+
+<% title = "Select a password" %>
+
+<% extra_stylesheets = [ "activate" ] %>
+
+<% floating = BLOCK %>
+
+  <p>For best security, choose a password that is hard to guess but
+    easy for you to remember.
+
+<% UNLESS user.regpassword %>
+  <% INCLUDE el/back.tt back = "/briefcase.pl" %>
+<% END %>
+
+<% END %>
+
+<% body = BLOCK %>
+
+  <h1><% INCLUDE lib/img.tt pic = "h1/newpasswd" %></h1>
+
+  <p><% IF user.regpassword %>
+    The temporary password that you just logged in with should be
+    changed.
+    <% ELSE %>
+      You may elect to change your account password on this screen.
+    <% END %>
+    You can either choose a password yourself, or accept the
+    password displayed below.  The password is <b>case sensitive</b>.
+
+  <table class="selectable">
+    <form action="<% uri('/prefs/passwd.pl') %>" method="POST">
+      <tbody>
+        <tr>
+          <td><input type="radio" name="chosen" value="random" tabindex="1" /></td>
+          <td>Use a randomly generated password (<a href="<% uri('self') %>">regenerate</a>):
+	  <br />
+<% c = 0 %>
+<% FOR part = p %>	  
+<% IF c %><br /> then <% END %>
+<% c = c + 1 %>
+  "<span class='passwd'><% part.value %></span>"  - 
+  <% IF part.type == "startword" %>
+	    the <b>first <% part.num %></b> letters of the word "<% part.word %>"
+  <% ELSIF part.type == "endword" %>
+	    the <b>last <% part.num %></b> letters of the word "<% part.word %>"
+  <% ELSIF part.type == "word" %>
+	    the <b>whole word</b> "<% part.word %>"
+  <% ELSIF part.type == "number" %>
+            the <b>number</b> <% part.value %>
+  <% END %>
+<% END %>
+	         </td><td>
+	   <b><span class='passwd'><% pass %></span></b>
+	  <input type="hidden" name="passwd0" value="<% pass %>" />
+	  </td>
+        </tr>
+        <tr>
+          <td><input type="radio" id="custom" name="chosen" value="custom" tabindex="2" onclick="document.getElementById('customf').focus()" /></td>
+          <td>Choose your own password:
+	  <td>
+	  <p><input type="password" name="passwd1" id="customf" onfocus="document.getElementById('custom').click()" tabindex="3"/></p>
+<% IF badpasswd %>
+	  <p class="error">Password must be at least 6 characters in length and consist of at least one letter and one number.</p>
+<script language="javascript" type="text/javascript"><!--
+   document.getElementById("customf").focus();
+--></script>
+<% END %>
+	  </td>
+        </tr>
+        <tr>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td><input type="image" src="<% uri('flat', '/gr/buttons/continue.png') %>"  tabindex="4" />
+	  </td>
+        </tr>
+      </tbody>
+    </form>
+
+  </table>
+
+    <p>You will be asked to re-enter your password on the next page.
+
+<% END %>

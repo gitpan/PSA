@@ -24,6 +24,14 @@ PSA::POE acts as a bridge between POE and PSA.  A PSA::POE object B<is
 a> PSA object.  It uses the POE::Session::PSA class to bridge between
 PSA and POE.
 
+In this mode, a PSA object (or, more accurately, a PSA::POE object) is
+tracked via a POE session.  This module was an experiment to see if
+there is any scope to make PSA's primary multi-threading capabilities
+work via POE.
+
+See the examples in F<t/poe-bin> in the distribution for a very brief
+exploration of this technique.
+
 =cut
 
 use base qw(PSA);  # oh boy!

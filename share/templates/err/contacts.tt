@@ -1,0 +1,11 @@
+<% floating = BLOCK %>
+
+<p>Use some of the below contacts to report problems etc
+</p>
+
+<dl>
+  <dt>Telephone:</dt>
+  <dd>(555) 123 546</dd>
+</dl>
+
+<% END %>

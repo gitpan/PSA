@@ -1,0 +1,12 @@
+<% title = "Not Authorised" %>
+
+<% PROCESS err/contacts.tt %>
+
+<% body = BLOCK %>
+<div style="padding: 1em">
+<h1>Not Authorised</h1>
+
+<p>This section of the site requires authorisation, which you either
+do not have or have not elected to enter correctly.
+
+<% END %>
